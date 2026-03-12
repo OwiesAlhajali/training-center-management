@@ -44,6 +44,18 @@ public class TenantService {
                 .collect(Collectors.toList());
     }
 
+    public TenantResponseDTO updateTenant(Long id, TenantRequestDTO requestDTO) {
+        Tenant existingTenant = tenantRepository.findById(id)
+             .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + id));
+
+        // update information
+        existingTenant.setName(requestDTO.getName());
+        existingTenant.setAddress(requestDTO.getAddress());
+        //not update key because uniqe
+
+        return mapToResponse(tenantRepository.save(existingTenant));
+    }
+
     public void deleteTenant(Long id) {
         if (!tenantRepository.existsById(id)) {
             throw new ResourceNotFoundException("Tenant not found with ID: " + id);

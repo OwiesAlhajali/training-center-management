@@ -34,6 +34,11 @@ public class TenantController {
         return ResponseEntity.ok(tenantService.getAllTenants());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TenantResponseDTO> update(@PathVariable Long id, @Valid @RequestBody TenantRequestDTO request) {
+        return ResponseEntity.ok(tenantService.updateTenant(id, request));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         tenantService.deleteTenant(id);
