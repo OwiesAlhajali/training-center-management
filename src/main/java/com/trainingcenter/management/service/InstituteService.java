@@ -40,7 +40,7 @@ public class InstituteService {
         return mapToResponse(institute);
     }
 
-    // --- الميثودات التي كانت ناقصة وتسببت في الخطأ ---
+    
 
     public List<InstituteResponseDTO> getAllInstitutes() {
         return instituteRepository.findAll().stream()
@@ -66,7 +66,6 @@ public class InstituteService {
         instituteRepository.deleteById(id);
     }
 
-    // --- ميثود التحويل المساعدة ---
 
     private InstituteResponseDTO mapToResponse(Institute institute) {
         return InstituteResponseDTO.builder()
