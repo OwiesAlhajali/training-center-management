@@ -50,6 +50,14 @@ public class ClassRoomService {
                 .collect(Collectors.toList());
     }
 
+	
+    public List<ClassRoomResponseDTO> searchByDevice(String device, Long instituteId) {
+         return classRoomRepository.findByAvailableDevicesContainingIgnoreCaseAndInstituteId(device, instituteId)
+            .stream()
+            .map(this::mapToResponse) 
+            .collect(Collectors.toList());
+    }
+
     public ClassRoomResponseDTO updateClassRoom(Long id, ClassRoomRequestDTO requestDTO) {
         ClassRoom existing = classRoomRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Classroom not found with ID: " + id));

@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface ClassRoomRepository extends JpaRepository<ClassRoom, Long> {
     List<ClassRoom> findByInstituteId(Long instituteId);
+    List<ClassRoom> findByAvailableDevicesContainingIgnoreCaseAndInstituteId(String device, Long instituteId);
 }
