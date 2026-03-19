@@ -3,6 +3,6 @@ package com.trainingcenter.management.dto;
 import lombok.Data;
 
 @Data
-public class CategoryRequest {
+public class CategoryRequestDTO {
     String name ;
 }
