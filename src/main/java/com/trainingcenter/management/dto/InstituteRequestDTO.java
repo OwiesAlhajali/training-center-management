@@ -9,6 +9,9 @@ public class InstituteRequestDTO {
     @NotNull(message = "User ID is required")
     private Long userId;
 
+    @NotNull(message = "Tenant ID is required")
+    private Long tenantId;
+
     @NotBlank(message = "Working hours are required")
     private String workingHours;
 

@@ -18,7 +18,7 @@ public class Tenant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-   @Column(name = "`key`", unique = true, nullable = false) 
+   @Column(name = "`KEY`", unique = true, nullable = false) 
     private String key; // identifire (example: TC-001)
 
     @Column(nullable = false)

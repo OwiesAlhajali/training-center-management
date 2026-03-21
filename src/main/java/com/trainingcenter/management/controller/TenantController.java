@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-// changer to /api/tenants 
-@RequestMapping("/tenants")
+@RequestMapping("/api/tenants")
 @RequiredArgsConstructor
 public class TenantController {
 

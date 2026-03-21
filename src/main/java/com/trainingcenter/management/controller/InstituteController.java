@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/institutes")
+@RequestMapping("/api/institutes")
 @RequiredArgsConstructor
 public class InstituteController { 
 
@@ -26,6 +26,11 @@ public class InstituteController {
     @GetMapping("/{id}")
     public ResponseEntity<InstituteResponseDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(instituteService.getInstituteById(id));
+    }
+
+    @GetMapping("/tenant/{tenantId}")
+    public ResponseEntity<List<InstituteResponseDTO>> getByTenant(@PathVariable Long tenantId) {
+        return ResponseEntity.ok(instituteService.getInstitutesByTenant(tenantId));
     }
 
     @GetMapping
@@ -44,4 +49,3 @@ public class InstituteController {
         return ResponseEntity.noContent().build();
     }
 }
-
