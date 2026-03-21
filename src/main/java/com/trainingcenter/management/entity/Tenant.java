@@ -25,6 +25,4 @@ public class Tenant {
     private String name;
 
     private String address;
-    @OneToMany(mappedBy = "tenant")
-    private List<User> users ;
 }
