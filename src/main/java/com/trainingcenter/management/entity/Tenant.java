@@ -3,6 +3,8 @@ package com.trainingcenter.management.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "tenants")
 @Getter
@@ -23,4 +25,6 @@ public class Tenant {
     private String name;
 
     private String address;
+    @OneToMany(mappedBy = "tenant")
+    private List<User> users ;
 }
