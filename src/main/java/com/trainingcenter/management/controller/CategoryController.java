@@ -1,7 +1,7 @@
 package com.trainingcenter.management.controller;
 
-import com.trainingcenter.management.dto.CategoryResponse;
-import com.trainingcenter.management.dto.CategoryRequest;
+import com.trainingcenter.management.dto.CategoryResponseDTO;
+import com.trainingcenter.management.dto.CategoryRequestDTO;
 import com.trainingcenter.management.entity.Category;
 import com.trainingcenter.management.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +18,14 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @PostMapping
-    public CategoryResponse createCategory(@RequestBody CategoryRequest request){
+    public CategoryResponseDTO createCategory(@RequestBody CategoryRequestDTO request){
 
         Category category = new Category();
         category.setName(request.getName());
 
         Category savedCategory = categoryService.createCategory(category);
 
-        CategoryResponse response = new CategoryResponse();
+        CategoryResponseDTO response = new CategoryResponseDTO();
         response.setId(savedCategory.getId());
         response.setName(savedCategory.getName());
 
@@ -33,12 +33,12 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<CategoryResponse> getAllCategories(){
+    public List<CategoryResponseDTO> getAllCategories(){
 
         List<Category> categories = categoryService.getAllCategories();
 
         return categories.stream().map(category -> {
-            CategoryResponse response = new CategoryResponse();
+            CategoryResponseDTO response = new CategoryResponseDTO();
             response.setId(category.getId());
             response.setName(category.getName());
             return response;
