@@ -12,6 +12,9 @@ public class InstituteRequestDTO {
     @NotNull(message = "Tenant ID is required")
     private Long tenantId;
 
+    @NotBlank(message = "Institute name is required")
+    private String name;
+
     @NotBlank(message = "Working hours are required")
     private String workingHours;
 
