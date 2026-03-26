@@ -25,7 +25,7 @@ public class TrainingSessionService {
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
-        TrainingSession session = trainingSessionRepository.findById(id)
+        TrainingSession session = sessionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
        return mapToResponse(session);
     }
