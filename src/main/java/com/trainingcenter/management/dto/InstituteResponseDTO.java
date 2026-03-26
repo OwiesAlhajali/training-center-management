@@ -7,6 +7,7 @@ import lombok.Data;
 @Builder
 public class InstituteResponseDTO {
     private Long id;
+    private String name;
     private String workingHours;
     private String description;
     private String location;

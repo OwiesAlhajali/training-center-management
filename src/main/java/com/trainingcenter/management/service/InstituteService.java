@@ -31,6 +31,7 @@ public class InstituteService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + requestDTO.getTenantId()));
 
         Institute institute = Institute.builder()
+	 	.name(requestDTO.getName())
                 .workingHours(requestDTO.getWorkingHours())
                 .description(requestDTO.getDescription())
                 .location(requestDTO.getLocation())
@@ -66,6 +67,7 @@ public class InstituteService {
         Institute existing = instituteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Institute not found with ID: " + id));
 
+	existing.setName(requestDTO.getName());
         existing.setWorkingHours(requestDTO.getWorkingHours());
         existing.setDescription(requestDTO.getDescription());
         existing.setLocation(requestDTO.getLocation());
@@ -83,6 +85,7 @@ public class InstituteService {
     private InstituteResponseDTO mapToResponse(Institute institute) {
         return InstituteResponseDTO.builder()
                 .id(institute.getId())
+		.name(institute.getName())
                 .workingHours(institute.getWorkingHours())
                 .description(institute.getDescription())
                 .location(institute.getLocation())

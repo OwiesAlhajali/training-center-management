@@ -15,7 +15,10 @@ public class Institute {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+ 
+    @Column(nullable = false)
+    private String name;
+   
     @Column(name = "working_hours")
     private String workingHours;
 
