@@ -104,7 +104,7 @@ public TrainingSessionResponseDTO updateSession(Long id, TrainingSessionRequestD
     TrainingSession existingSession = sessionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
 
-    // تحديث البيانات الأساسية للجلسة
+    
     existingSession.setPrice(requestDTO.getPrice());
     existingSession.setAvailableSeats(requestDTO.getAvailableSeats());
     existingSession.setMinSeats(requestDTO.getMinSeats());
@@ -112,7 +112,7 @@ public TrainingSessionResponseDTO updateSession(Long id, TrainingSessionRequestD
     existingSession.setStatus(requestDTO.getStatus());
     existingSession.setRequiredEquipment(requestDTO.getRequiredEquipment());
 
-    // تحديث العلاقات إذا تغيرت
+    
     if (!existingSession.getClassRoom().getId().equals(requestDTO.getClassroomId())) {
         existingSession.setClassRoom(classRoomRepository.findById(requestDTO.getClassroomId())
                 .orElseThrow(() -> new ResourceNotFoundException("Classroom not found")));
@@ -123,13 +123,13 @@ public TrainingSessionResponseDTO updateSession(Long id, TrainingSessionRequestD
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher not found")));
     }
 
-    // --- الجزء الخاص بالمحاضرات ---
-    // إذا تم إرسال بيانات مواعيد جديدة، نقوم بتحديث جدول المحاضرات
+    
+    
     if (requestDTO.getStartDate() != null && requestDTO.getDaysOfWeek() != null) {
-        // حذف المواعيد القديمة
+    
         lectureService.removeLecturesBySession(id);
         
-        // توليد المواعيد الجديدة (سيقوم بفحص التعارضات تلقائياً)
+    
         lectureService.generateAutoLectures(
             existingSession, 
             requestDTO.getStartDate(), 
@@ -144,14 +144,14 @@ public TrainingSessionResponseDTO updateSession(Long id, TrainingSessionRequestD
 
 @Transactional
 public void deleteSession(Long id) {
-    // 1. التحقق من وجود الجلسة
+    
     TrainingSession session = sessionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
 
-    // 2. حذف المحاضرات المرتبطة بالجلسة أولاً
+    
     lectureService.removeLecturesBySession(id);
 
-    // 3. حذف الجلسة نفسها
+    
     sessionRepository.delete(session);
 }
 

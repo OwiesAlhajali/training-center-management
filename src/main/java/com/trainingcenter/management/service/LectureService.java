@@ -83,11 +83,11 @@ public class LectureService {
         int lecturesProcessed = 0;
         LocalDate currentDate = startDate;
 
-        // المرحلة الأولى: فحص الجدول بالكامل وتحديد التعارضات
+        
         while (lecturesProcessed < lecturesNeeded) {
             if (selectedDays.contains(currentDate.getDayOfWeek())) {
                 
-                // فحص التعارض للقاعة وللمدرس
+        
                 boolean isRoomBusy = lectureRepository.existsConflict(
                         session.getClassRoom().getId(), currentDate, startTime, endTime);
                 boolean isTeacherBusy = lectureRepository.isTeacherBusy(
@@ -96,7 +96,7 @@ public class LectureService {
                 if (isRoomBusy || isTeacherBusy) {
                     conflictDates.add(currentDate);
                 } else {
-                    // بناء المحاضرة مؤقتاً في الذاكرة
+        
                     Lecture lecture = Lecture.builder()
                             .lectureDate(currentDate)
                             .startTime(startTime)
@@ -112,11 +112,11 @@ public class LectureService {
             currentDate = currentDate.plusDays(1);
         }
 
-        // المرحلة الثانية: اتخاذ القرار (اقتراح حلول أو حفظ)
+        
         if (!conflictDates.isEmpty()) {
-            // استدعاء محرك الاقتراحات بناءً على أولوياتنا (تبديل قاعة -> إزاحة وقت)
+        
             List<AvailableOptionDTO> suggestions = findSmartSuggestions(
-                    session, startDate, startTime, endTime);
+                    session, conflictDates, startTime, endTime);
 
                 throw new ScheduleConflictException(ConflictResponseDTO.builder()
             .message("Conflict detected on " + conflictDates.size() + " dates.")
@@ -125,13 +125,13 @@ public class LectureService {
             .build());
         }
 
-        // المرحلة الثالثة: الحفظ الجماعي إذا كان الجدول سليماً 100%
+        
         lectureRepository.saveAll(pendingLectures);
 
-        // تحديث مدة الجلسة في قاعدة البيانات
+        
         long totalDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, currentDate);
         session.setDuration(totalDays + " days for " + lecturesNeeded + " lectures");
-        // sessionRepository.save(session); // تأكد من حفظ حالة الجلسة إذا لزم الأمر
+        
     }
 
     // Add a single manual lecture to a session
@@ -160,76 +160,110 @@ public class LectureService {
         return mapToResponseDTO(lectureRepository.save(lecture));
     }
 
-        /**
+    /**
      * Smart Suggestion Engine: Finds alternative slots when a conflict occurs.
-     * Priority 1: ROOM_SWAP (Keep time, change room based on capacity & equipment)
+     * Priority 1: ROOM_SWAP (Keep time, change room for the entire series)
      * Priority 2: SERIES_SHIFT (Keep room, change time within working hours)
+     * Priority 3: PARTIAL_ROOM_SWAP (Keep time, change room only for conflicted dates)
      */
-    private List<AvailableOptionDTO> findSmartSuggestions(TrainingSession session, LocalDate date, 
+   private List<AvailableOptionDTO> findSmartSuggestions(TrainingSession session, List<LocalDate> conflictDates, 
                                                         LocalTime originalStart, LocalTime originalEnd) {
-        List<AvailableOptionDTO> suggestions = new ArrayList<>();
-        
-        // 1. Define Working Hours
-        LocalTime openingTime = LocalTime.of(8, 0);
-        LocalTime closingTime = LocalTime.of(22, 0);
-        long durationMinutes = java.time.Duration.between(originalStart, originalEnd).toMinutes();
+    List<AvailableOptionDTO> suggestions = new ArrayList<>();
+    int MAX_ALLOWED = 3; 
 
-        // 2. PRIORITY 1: Try to find another room (ROOM_SWAP)
-        // We filter by capacity and equipment (simulated by course title/keywords)
-        List<ClassRoom> alternativeRooms = lectureRepository.findAvailableRoomsWithFeatures(
-                session.getMinSeats(), 
-                session.getRequiredEquipment(),
-                date, 
-                originalStart, 
-                originalEnd
-        );
+    LocalTime openingTime = LocalTime.of(8, 0);
+    LocalTime closingTime = LocalTime.of(22, 0);
+    long durationMinutes = java.time.Duration.between(originalStart, originalEnd).toMinutes();
+    LocalDate referenceDate = (conflictDates != null && !conflictDates.isEmpty()) ? conflictDates.get(0) : LocalDate.now();
 
-        for (ClassRoom room : alternativeRooms) {
-            if (!room.getId().equals(session.getClassRoom().getId())) {
-                suggestions.add(AvailableOptionDTO.builder()
-                        .suggestionType("ROOM_SWAP")
-                        .roomId(room.getId())
-                        .roomNumber(room.getNumber())
-                        .date(date)
+    List<ClassRoom> fullSwapRooms = lectureRepository.findAvailableRoomsWithFeatures(
+            session.getMinSeats(), 
+            session.getRequiredEquipment(),
+            referenceDate, 
+            originalStart, 
+            originalEnd
+    );
+
+    for (ClassRoom room : fullSwapRooms) {
+        if (suggestions.size() >= MAX_ALLOWED) break;
+        if (!room.getId().equals(session.getClassRoom().getId())) {
+            suggestions.add(AvailableOptionDTO.builder()
+                    .suggestionType("ROOM_SWAP")
+                    .roomId(room.getId())
+                    .roomNumber(room.getNumber())
+                    .date(referenceDate)
+                    .startTime(originalStart)
+                    .endTime(originalEnd)
+                    .note("Move all sessions to Room " + room.getNumber())
+                    .build());
+        }
+    }
+
+    // --- الاستراتيجية 2: SERIES_SHIFT (إزاحة الوقت للسلسلة كاملة) ---
+    // نبحث عن أوقات بديلة فقط إذا لم نصل لـ 3 اقتراحات بعد
+    if (suggestions.size() < MAX_ALLOWED) {
+        LocalTime scanTime = openingTime;
+        while (scanTime.plusMinutes(durationMinutes).isBefore(closingTime) && suggestions.size() < MAX_ALLOWED) {
+            if (!scanTime.equals(originalStart)) {
+                boolean isRoomFree = !lectureRepository.existsConflict(
+                        session.getClassRoom().getId(), referenceDate, scanTime, scanTime.plusMinutes(durationMinutes));
+                boolean isTeacherFree = !lectureRepository.isTeacherBusy(
+                        session.getTeacher().getId(), referenceDate, scanTime, scanTime.plusMinutes(durationMinutes));
+
+                if (isRoomFree && isTeacherFree) {
+                    suggestions.add(AvailableOptionDTO.builder()
+                            .suggestionType("SERIES_SHIFT")
+                            .roomId(session.getClassRoom().getId())
+                            .roomNumber(session.getClassRoom().getNumber())
+                            .date(referenceDate)
+                            .startTime(scanTime)
+                            .endTime(scanTime.plusMinutes(durationMinutes))
+                            .note("Shift the entire series to: " + scanTime)
+                            .build());
+                }
+            }
+            scanTime = scanTime.plusMinutes(30); 
+        }
+    }
+
+
+
+    if (suggestions.size() < MAX_ALLOWED && conflictDates != null && !conflictDates.isEmpty()) {
+        List<AvailableOptionDTO> partialSuggestions = new ArrayList<>();
+        boolean canResolveAllPartially = true;
+
+        for (LocalDate confDate : conflictDates) {
+            List<ClassRoom> altRooms = lectureRepository.findAvailableRoomsWithFeatures(
+                    session.getMinSeats(), session.getRequiredEquipment(), confDate, originalStart, originalEnd);
+
+            ClassRoom altRoom = altRooms.stream()
+                    .filter(r -> !r.getId().equals(session.getClassRoom().getId()))
+                    .findFirst().orElse(null);
+
+            if (altRoom != null) {
+                partialSuggestions.add(AvailableOptionDTO.builder()
+                        .suggestionType("PARTIAL")
+                        .roomId(altRoom.getId())
+                        .roomNumber(altRoom.getNumber())
+                        .date(confDate)
                         .startTime(originalStart)
                         .endTime(originalEnd)
-                        .note("Room " + room.getNumber() + " is available at your preferred time.")
+                        .note("On " + confDate + ", move to " + altRoom.getNumber())
                         .build());
-            }
-            if (suggestions.size() >= 2) break; // Limit to 2 room suggestions
-        }
-
-        // 3. PRIORITY 2: Try to find another time in the same room (SERIES_SHIFT)
-        if (suggestions.size() < 3) {
-            LocalTime scanTime = openingTime;
-            
-            while (scanTime.plusMinutes(durationMinutes).isBefore(closingTime)) {
-                // Avoid suggesting the same original time
-                if (!scanTime.equals(originalStart)) {
-                    boolean isRoomFree = !lectureRepository.existsConflict(
-                            session.getClassRoom().getId(), date, scanTime, scanTime.plusMinutes(durationMinutes));
-                    boolean isTeacherFree = !lectureRepository.isTeacherBusy(
-                            session.getTeacher().getId(), date, scanTime, scanTime.plusMinutes(durationMinutes));
-
-                    if (isRoomFree && isTeacherFree) {
-                        suggestions.add(AvailableOptionDTO.builder()
-                                .suggestionType("SERIES_SHIFT")
-                                .roomId(session.getClassRoom().getId())
-                                .roomNumber(session.getClassRoom().getNumber())
-                                .date(date)
-                                .startTime(scanTime)
-                                .endTime(scanTime.plusMinutes(durationMinutes))
-                                .note("The entire series can be shifted to this time slot.")
-                                .build());
-                        break; // Suggest the first available time gap found
-                    }
-                }
-                scanTime = scanTime.plusMinutes(30); // Scan every 30 minutes
+            } else {
+                canResolveAllPartially = false;
+                break;
             }
         }
 
-        return suggestions;
+        if (canResolveAllPartially && !partialSuggestions.isEmpty()) {
+
+            suggestions.add(partialSuggestions.get(0));
+        }
     }
+
+    return suggestions;
+}
 
     // Update single lecture details
     @Transactional

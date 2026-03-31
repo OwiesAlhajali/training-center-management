@@ -16,44 +16,44 @@ public class LectureController {
 
     private final LectureService lectureService;
 
-    // جلب محاضرات جلسة معينة
+    
     @GetMapping("/session/{sessionId}")
     public ResponseEntity<List<LectureResponseDTO>> getLecturesBySession(@PathVariable Long sessionId) {
         return ResponseEntity.ok(lectureService.getLecturesBySessionId(sessionId));
     }
 
-    // جلب جميع المحاضرات (تم تصحيح النوع ليعيد DTO)[cite: 13, 18]
+    
     @GetMapping
     public ResponseEntity<List<LectureResponseDTO>> getAllLectures() {
         return ResponseEntity.ok(lectureService.getAllLectures());
     }
 
-    // جلب محاضرة واحدة بواسطة ID[cite: 13, 18]
+    
     @GetMapping("/{id}")
     public ResponseEntity<LectureResponseDTO> getLectureById(@PathVariable Long id) {
         return ResponseEntity.ok(lectureService.getLectureById(id));
     }
 
 
-// 1. إضافة محاضرة لجلسة معينة
-// إضافة محاضرة لجلسة محددة
-@PostMapping("/session/{sessionId}")
-public ResponseEntity<LectureResponseDTO> addLecture(@PathVariable Long sessionId, @RequestBody LectureRequestDTO request) {
-    return ResponseEntity.ok(lectureService.addLectureToSession(sessionId, request));
-}
 
-// تعديل محاضرة معينة
-@PutMapping("/{id}")
-public ResponseEntity<LectureResponseDTO> updateLecture(@PathVariable Long id, @RequestBody LectureRequestDTO request) {
-    return ResponseEntity.ok(lectureService.updateSingleLecture(id, request));
-}
 
-// حذف محاضرة معينة
-@DeleteMapping("/{id}")
-public ResponseEntity<Void> deleteLecture(@PathVariable Long id) {
-    lectureService.deleteSingleLecture(id);
-    return ResponseEntity.noContent().build();
-}
+    @PostMapping("/session/{sessionId}")
+    public ResponseEntity<LectureResponseDTO> addLecture(@PathVariable Long sessionId, @RequestBody LectureRequestDTO request) {
+        return ResponseEntity.ok(lectureService.addLectureToSession(sessionId, request));
+    }
+
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<LectureResponseDTO> updateLecture(@PathVariable Long id, @RequestBody LectureRequestDTO request) {
+        return ResponseEntity.ok(lectureService.updateSingleLecture(id, request));
+    }
+
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteLecture(@PathVariable Long id) {
+        lectureService.deleteSingleLecture(id);
+        return ResponseEntity.noContent().build();
+    }
 
 
 

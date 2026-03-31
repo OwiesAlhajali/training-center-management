@@ -24,40 +24,19 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
            "AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime)")
     boolean isTeacherBusy(@Param("teacherId") Long teacherId, @Param("date") LocalDate date, 
                          @Param("start") LocalTime start, @Param("end") LocalTime end);
-/*
 
-    @Query("SELECT r FROM ClassRoom r WHERE r.capacity >= :minSeats " +
-       "AND r.availableDevices LIKE %:requiredDevice% " +
-       "AND NOT EXISTS (SELECT l FROM Lecture l WHERE l.classRoom.id = r.id " +
-       "AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime))")
-    List<ClassRoom> findAvailableRoomsWithFeatures(@Param("minSeats") Integer minSeats,
-                                              @Param("requiredDevice") String requiredDevice,
-                                              @Param("date") LocalDate date,
-                                              @Param("start") LocalTime start,
-                                              @Param("end") LocalTime end);
-
-@Query("SELECT r FROM ClassRoom r WHERE r.capacity >= :minSeats " +
-       "AND NOT EXISTS (SELECT l FROM Lecture l WHERE l.classRoom.id = r.id " +
-       "AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime))")
-List<ClassRoom> findAvailableRoomsWithFeatures(
-    @Param("minSeats") Integer minSeats,
-    @Param("date") LocalDate date,
-    @Param("start") LocalTime start,
-    @Param("end") LocalTime end
-);
-*/
 
 	@Query("SELECT r FROM ClassRoom r WHERE r.capacity >= :minSeats " +
        "AND (:requiredDevice IS NULL OR LOWER(r.availableDevices) LIKE LOWER(CONCAT('%', :requiredDevice, '%'))) " +
        "AND NOT EXISTS (SELECT l FROM Lecture l WHERE l.classRoom.id = r.id " +
        "AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime))")
-List<ClassRoom> findAvailableRoomsWithFeatures(
-    @Param("minSeats") Integer minSeats,
-    @Param("requiredDevice") String requiredDevice, // المعامل الجديد
-    @Param("date") LocalDate date,
-    @Param("start") LocalTime start,
-    @Param("end") LocalTime end
-);
+    List<ClassRoom> findAvailableRoomsWithFeatures(
+        @Param("minSeats") Integer minSeats,
+        @Param("requiredDevice") String requiredDevice,
+        @Param("date") LocalDate date,
+        @Param("start") LocalTime start,
+        @Param("end") LocalTime end
+    );
 
 
     List<Lecture> findByTrainingSession_Id(Long sessionId);
