@@ -23,6 +23,7 @@ public class Register {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Builder.default
     @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 
