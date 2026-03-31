@@ -2,11 +2,14 @@ package com.trainingcenter.management.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.trainingcenter.management.dto.ConflictResponseDTO;
 import com.trainingcenter.management.exception.ScheduleConflictException;
+
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -37,5 +40,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ScheduleConflictException.class)
     public ResponseEntity<ConflictResponseDTO> handleScheduleConflict(ScheduleConflictException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getConflictResponse());
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+
+        return ResponseEntity.badRequest().body(
+                Map.of(
+                        "status", 400,
+                        "error", "Invalid request body",
+                        "message", "Invalid value provided (possibly enum or wrong data type)"
+                )
+        );
     }
 }
