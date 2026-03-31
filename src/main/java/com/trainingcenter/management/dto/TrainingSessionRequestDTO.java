@@ -3,6 +3,9 @@ package com.trainingcenter.management.dto;
 import com.trainingcenter.management.entity.SessionStatus;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
 @Data
 public class TrainingSessionRequestDTO {
@@ -15,4 +18,9 @@ public class TrainingSessionRequestDTO {
     private Long courseId;
     private Long classroomId;
     private Long teacherId;
+    
+    private LocalDate startDate;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private List<String> daysOfWeek; 
 }
