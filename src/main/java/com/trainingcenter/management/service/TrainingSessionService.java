@@ -83,6 +83,7 @@ TrainingSession session = TrainingSession.builder()
             .course(course)
             .classRoom(classroom)
             .teacher(teacher)
+            .requiredEquipment(requestDTO.getRequiredEquipment())
             .build();
 
     TrainingSession savedSession = sessionRepository.save(session);
@@ -109,6 +110,7 @@ public TrainingSessionResponseDTO updateSession(Long id, TrainingSessionRequestD
     existingSession.setMinSeats(requestDTO.getMinSeats());
     existingSession.setNumberOfLectures(requestDTO.getNumberOfLectures());
     existingSession.setStatus(requestDTO.getStatus());
+    existingSession.setRequiredEquipment(requestDTO.getRequiredEquipment());
 
     // تحديث العلاقات إذا تغيرت
     if (!existingSession.getClassRoom().getId().equals(requestDTO.getClassroomId())) {
@@ -160,6 +162,7 @@ public void deleteSession(Long id) {
                 .availableSeats(session.getAvailableSeats())
                 .minSeats(session.getMinSeats())
                 .numberOfLectures(session.getNumberOfLectures())
+		.requiredEquipment(session.getRequiredEquipment())
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .courseName(session.getCourse().getName())

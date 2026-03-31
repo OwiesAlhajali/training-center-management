@@ -13,6 +13,7 @@ public class TrainingSessionResponseDTO {
     private Integer availableSeats;
     private Integer minSeats;
     private Integer numberOfLectures;
+    private String requiredEquipment;
     private String duration;
     private SessionStatus status;
     private String courseName;

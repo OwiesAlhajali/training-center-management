@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.trainingcenter.management.dto.ConflictResponseDTO;
+import com.trainingcenter.management.exception.ScheduleConflictException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -30,5 +32,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(Exception ex) {
         return new ResponseEntity<>("An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(ScheduleConflictException.class)
+    public ResponseEntity<ConflictResponseDTO> handleScheduleConflict(ScheduleConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getConflictResponse());
     }
 }

@@ -2,6 +2,9 @@ package com.trainingcenter.management.service;
 
 import com.trainingcenter.management.dto.LectureRequestDTO;
 import com.trainingcenter.management.dto.LectureResponseDTO;
+import com.trainingcenter.management.exception.ScheduleConflictException;
+import com.trainingcenter.management.dto.ConflictResponseDTO;
+import com.trainingcenter.management.dto.AvailableOptionDTO;
 import com.trainingcenter.management.entity.ClassRoom;
 import com.trainingcenter.management.entity.Lecture;
 import com.trainingcenter.management.entity.Teacher;
@@ -20,6 +23,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +35,13 @@ public class LectureService {
     private final TrainingSessionRepository sessionRepository;
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
+
+
+
+
+
+   
+
 
     // Get lectures by session ID
     public List<LectureResponseDTO> getLecturesBySessionId(Long sessionId) {
@@ -65,32 +76,62 @@ public class LectureService {
                 .map(DayOfWeek::valueOf)
                 .collect(Collectors.toList());
 
-        int lecturesCreated = 0;
+        List<LocalDate> conflictDates = new ArrayList<>();
+        List<Lecture> pendingLectures = new ArrayList<>();
+        
+        int lecturesNeeded = session.getNumberOfLectures();
+        int lecturesProcessed = 0;
         LocalDate currentDate = startDate;
 
-        while (lecturesCreated < session.getNumberOfLectures()) {
+        // المرحلة الأولى: فحص الجدول بالكامل وتحديد التعارضات
+        while (lecturesProcessed < lecturesNeeded) {
             if (selectedDays.contains(currentDate.getDayOfWeek())) {
                 
-                validateConflicts(session.getClassRoom().getId(), session.getTeacher().getId(), 
-                                 currentDate, startTime, endTime);
+                // فحص التعارض للقاعة وللمدرس
+                boolean isRoomBusy = lectureRepository.existsConflict(
+                        session.getClassRoom().getId(), currentDate, startTime, endTime);
+                boolean isTeacherBusy = lectureRepository.isTeacherBusy(
+                        session.getTeacher().getId(), currentDate, startTime, endTime);
 
-                Lecture lecture = Lecture.builder()
-                        .lectureDate(currentDate)
-                        .startTime(startTime)
-                        .endTime(endTime)
-                        .trainingSession(session)
-                        .classRoom(session.getClassRoom())
-                        .teacher(session.getTeacher())
-                        .build();
-
-                lectureRepository.save(lecture);
-                lecturesCreated++;
+                if (isRoomBusy || isTeacherBusy) {
+                    conflictDates.add(currentDate);
+                } else {
+                    // بناء المحاضرة مؤقتاً في الذاكرة
+                    Lecture lecture = Lecture.builder()
+                            .lectureDate(currentDate)
+                            .startTime(startTime)
+                            .endTime(endTime)
+                            .trainingSession(session)
+                            .classRoom(session.getClassRoom())
+                            .teacher(session.getTeacher())
+                            .build();
+                    pendingLectures.add(lecture);
+                }
+                lecturesProcessed++;
             }
             currentDate = currentDate.plusDays(1);
         }
 
-       long weeks = ChronoUnit.WEEKS.between(startDate, currentDate);
-       session.setDuration(weeks + " weeks (" + session.getNumberOfLectures() + " lectures)");
+        // المرحلة الثانية: اتخاذ القرار (اقتراح حلول أو حفظ)
+        if (!conflictDates.isEmpty()) {
+            // استدعاء محرك الاقتراحات بناءً على أولوياتنا (تبديل قاعة -> إزاحة وقت)
+            List<AvailableOptionDTO> suggestions = findSmartSuggestions(
+                    session, startDate, startTime, endTime);
+
+                throw new ScheduleConflictException(ConflictResponseDTO.builder()
+            .message("Conflict detected on " + conflictDates.size() + " dates.")
+            .conflictingDates(conflictDates)
+            .suggestions(suggestions)
+            .build());
+        }
+
+        // المرحلة الثالثة: الحفظ الجماعي إذا كان الجدول سليماً 100%
+        lectureRepository.saveAll(pendingLectures);
+
+        // تحديث مدة الجلسة في قاعدة البيانات
+        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, currentDate);
+        session.setDuration(totalDays + " days for " + lecturesNeeded + " lectures");
+        // sessionRepository.save(session); // تأكد من حفظ حالة الجلسة إذا لزم الأمر
     }
 
     // Add a single manual lecture to a session
@@ -117,6 +158,77 @@ public class LectureService {
                 .build();
 
         return mapToResponseDTO(lectureRepository.save(lecture));
+    }
+
+        /**
+     * Smart Suggestion Engine: Finds alternative slots when a conflict occurs.
+     * Priority 1: ROOM_SWAP (Keep time, change room based on capacity & equipment)
+     * Priority 2: SERIES_SHIFT (Keep room, change time within working hours)
+     */
+    private List<AvailableOptionDTO> findSmartSuggestions(TrainingSession session, LocalDate date, 
+                                                        LocalTime originalStart, LocalTime originalEnd) {
+        List<AvailableOptionDTO> suggestions = new ArrayList<>();
+        
+        // 1. Define Working Hours
+        LocalTime openingTime = LocalTime.of(8, 0);
+        LocalTime closingTime = LocalTime.of(22, 0);
+        long durationMinutes = java.time.Duration.between(originalStart, originalEnd).toMinutes();
+
+        // 2. PRIORITY 1: Try to find another room (ROOM_SWAP)
+        // We filter by capacity and equipment (simulated by course title/keywords)
+        List<ClassRoom> alternativeRooms = lectureRepository.findAvailableRoomsWithFeatures(
+                session.getMinSeats(), 
+                session.getRequiredEquipment(),
+                date, 
+                originalStart, 
+                originalEnd
+        );
+
+        for (ClassRoom room : alternativeRooms) {
+            if (!room.getId().equals(session.getClassRoom().getId())) {
+                suggestions.add(AvailableOptionDTO.builder()
+                        .suggestionType("ROOM_SWAP")
+                        .roomId(room.getId())
+                        .roomNumber(room.getNumber())
+                        .date(date)
+                        .startTime(originalStart)
+                        .endTime(originalEnd)
+                        .note("Room " + room.getNumber() + " is available at your preferred time.")
+                        .build());
+            }
+            if (suggestions.size() >= 2) break; // Limit to 2 room suggestions
+        }
+
+        // 3. PRIORITY 2: Try to find another time in the same room (SERIES_SHIFT)
+        if (suggestions.size() < 3) {
+            LocalTime scanTime = openingTime;
+            
+            while (scanTime.plusMinutes(durationMinutes).isBefore(closingTime)) {
+                // Avoid suggesting the same original time
+                if (!scanTime.equals(originalStart)) {
+                    boolean isRoomFree = !lectureRepository.existsConflict(
+                            session.getClassRoom().getId(), date, scanTime, scanTime.plusMinutes(durationMinutes));
+                    boolean isTeacherFree = !lectureRepository.isTeacherBusy(
+                            session.getTeacher().getId(), date, scanTime, scanTime.plusMinutes(durationMinutes));
+
+                    if (isRoomFree && isTeacherFree) {
+                        suggestions.add(AvailableOptionDTO.builder()
+                                .suggestionType("SERIES_SHIFT")
+                                .roomId(session.getClassRoom().getId())
+                                .roomNumber(session.getClassRoom().getNumber())
+                                .date(date)
+                                .startTime(scanTime)
+                                .endTime(scanTime.plusMinutes(durationMinutes))
+                                .note("The entire series can be shifted to this time slot.")
+                                .build());
+                        break; // Suggest the first available time gap found
+                    }
+                }
+                scanTime = scanTime.plusMinutes(30); // Scan every 30 minutes
+            }
+        }
+
+        return suggestions;
     }
 
     // Update single lecture details
