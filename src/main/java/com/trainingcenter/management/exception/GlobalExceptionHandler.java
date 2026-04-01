@@ -6,6 +6,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.trainingcenter.management.dto.ConflictResponseDTO;
+import com.trainingcenter.management.exception.ScheduleConflictException;
 
 import java.util.Map;
 
@@ -34,6 +36,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleGeneralException(Exception ex) {
         return new ResponseEntity<>("An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(ScheduleConflictException.class)
+    public ResponseEntity<ConflictResponseDTO> handleScheduleConflict(ScheduleConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getConflictResponse());
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
 

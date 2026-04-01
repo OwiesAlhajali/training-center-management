@@ -28,7 +28,10 @@ public class TrainingSession {
     private Integer numberOfLectures;
 
     private String duration;
-
+ 
+    @Column(name = "required_equipment")
+    private String requiredEquipment;
+     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SessionStatus status;
