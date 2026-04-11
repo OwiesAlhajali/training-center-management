@@ -1,29 +1,19 @@
 package com.trainingcenter.management.controller;
-
-import com.stripe.Stripe;
-import com.stripe.model.checkout.Session;
-import com.stripe.param.checkout.SessionCreateParams;
 import com.trainingcenter.management.dto.EnrollmentRequestDTO;
 import com.trainingcenter.management.dto.EnrollmentResponseDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.service.EnrollmentService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/enrollments")
 @RequiredArgsConstructor
 public class EnrollmentController {
-
-    @Value("${stripe.secret.key}")
-    private String stripeSecretKey;
 
     private final EnrollmentService enrollmentService;
 
@@ -35,8 +25,6 @@ public class EnrollmentController {
         EnrollmentResponseDTO response = enrollmentService.createEnrollment(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
-
-    // payment
 
     // Delete Enrollment
     @DeleteMapping("/{id}")
