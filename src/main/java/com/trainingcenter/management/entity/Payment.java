@@ -24,7 +24,10 @@ public class Payment {
     @JoinColumn(name = "training_session_id", nullable = false)
     private TrainingSession trainingSession;
 
-    @Column(name = "stripe_payment_intent_id", nullable = false)
+    @Column(name = "stripe_checkout_session_id", nullable = false, unique = true)
+    private String stripeCheckoutSessionId;
+
+    @Column(name = "stripe_payment_intent_id", unique = true)
     private String stripePaymentIntentId;
 
     @Enumerated(EnumType.STRING)

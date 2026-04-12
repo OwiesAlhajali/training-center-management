@@ -1,5 +1,6 @@
 package com.trainingcenter.management.exception;
 
+import com.stripe.exception.StripeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -42,6 +43,16 @@ public class GlobalExceptionHandler {
                         "message", "Invalid value provided (possibly enum or wrong data type)"
                 )
         );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(StripeException.class)
+    public ResponseEntity<String> handleStripeException(StripeException ex) {
+        return new ResponseEntity<>("Payment gateway error: " + ex.getMessage(), HttpStatus.BAD_GATEWAY);
     }
 
     @ExceptionHandler(Exception.class)

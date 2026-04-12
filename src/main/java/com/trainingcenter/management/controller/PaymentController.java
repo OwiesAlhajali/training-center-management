@@ -14,8 +14,15 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/initiate/{sessionId}")
-    public ResponseEntity<String> initiatePayment(@PathVariable Long sessionId) throws StripeException {
-        String clientSecret = paymentService.initiatePayment(sessionId);
-        return ResponseEntity.ok(clientSecret);
+    public ResponseEntity<String> initiatePayment(
+            @PathVariable Long sessionId,
+            @RequestHeader(value = "X-User-Identifier", required = false) String userIdentifierHeader) throws StripeException {
+
+        if (userIdentifierHeader == null || userIdentifierHeader.isBlank()) {
+            throw new IllegalArgumentException("X-User-Identifier header is required");
+        }
+
+        String checkoutUrl = paymentService.initiatePayment(sessionId, userIdentifierHeader);
+        return ResponseEntity.ok(checkoutUrl);
     }
 }
