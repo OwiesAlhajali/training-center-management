@@ -22,7 +22,7 @@ public class OtpService {
 
 
         if (!userRepository.existsByEmail(email)) {
-        throw new BadRequestException("هذا البريد الإلكتروني غير مسجل لدينا.");
+        throw new BadRequestException("This email address is not registered with us.");
         }
 
 
@@ -45,14 +45,14 @@ public class OtpService {
     @Transactional
     public void verifyOtp(String email, String code) {
         OtpEntry otp = otpRepository.findTopByEmailAndUsedFalseOrderByExpiryDateDesc(email)
-                .orElseThrow(() -> new BadRequestException("لم يتم العثور على كود نشط"));
+                .orElseThrow(() -> new BadRequestException("No active code found"));
 
         if (otp.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("انتهت صلاحية الكود");
+            throw new BadRequestException("The code has expired");
         }
 
         if (!otp.getCode().equals(code)) {
-            throw new BadRequestException("كود التحقق غير صحيح");
+            throw new BadRequestException("The verification code is invalid");
         }
 
         otp.setUsed(true);

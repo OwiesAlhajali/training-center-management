@@ -14,12 +14,12 @@ public class OtpController {
     @PostMapping("/send")
     public ResponseEntity<String> send(@RequestParam String email) {
         otpService.generateAndSendOtp(email);
-        return ResponseEntity.ok("تم إرسال الكود بنجاح");
+        return ResponseEntity.ok("The code has been sent successfully");
     }
 
     @PostMapping("/verify")
     public ResponseEntity<String> verify(@RequestParam String email, @RequestParam String code) {
         otpService.verifyOtp(email, code);
-        return ResponseEntity.ok("تم التحقق بنجاح");
+        return ResponseEntity.ok("Verified successfully");
     }
 }
