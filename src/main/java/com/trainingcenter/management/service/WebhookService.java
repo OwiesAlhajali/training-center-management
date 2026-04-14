@@ -40,6 +40,7 @@ public class WebhookService {
             return;
         }
 
+
         // Check if already succeeded (idempotency)
         if (payment.getStatus() == PaymentStatus.SUCCEEDED || payment.getStatus() == PaymentStatus.FAILED) {
             logger.info("Payment already processed for PaymentIntent ID: {}", paymentIntentId);
