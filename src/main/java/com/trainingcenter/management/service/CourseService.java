@@ -111,7 +111,7 @@ public class CourseService {
                 .description(course.getDescription())
                 .requirements(course.getRequirements())
                 .hours(course.getHours())
-                .categoryName(course.getCategory().getName()) 
+                .categoryName(course.getCategory().getName())
                 .tenantName(course.getTenant().getName())
                 .build();
     }

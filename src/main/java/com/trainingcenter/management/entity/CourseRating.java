@@ -10,8 +10,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table (name="Course-Rating", uniqueConstraints =
-        {@UniqueConstraint (columnNames = {"course_id","user_id"})
+@Table (name="Course_Rating", uniqueConstraints =
+        {@UniqueConstraint (columnNames = {"course_id","Student_id"})
         })
 
 public class CourseRating {

@@ -1,5 +1,4 @@
 package com.trainingcenter.management.controller;
-
 import com.trainingcenter.management.dto.EnrollmentRequestDTO;
 import com.trainingcenter.management.dto.EnrollmentResponseDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
@@ -8,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/enrollments")
