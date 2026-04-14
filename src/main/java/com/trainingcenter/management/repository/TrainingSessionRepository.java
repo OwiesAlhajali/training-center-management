@@ -15,4 +15,6 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
 
     @Query("SELECT ts FROM TrainingSession ts WHERE ts.course.tenant.id = :tenantId")
     List<TrainingSession> findByTenantId(@Param("tenantId") Long tenantId);
+
+    List<TrainingSession> findByCourseId(Long courseId);
 }
