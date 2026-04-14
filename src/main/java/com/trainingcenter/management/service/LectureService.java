@@ -199,8 +199,7 @@ public class LectureService {
         }
     }
 
-    // --- الاستراتيجية 2: SERIES_SHIFT (إزاحة الوقت للسلسلة كاملة) ---
-    // نبحث عن أوقات بديلة فقط إذا لم نصل لـ 3 اقتراحات بعد
+   
     if (suggestions.size() < MAX_ALLOWED) {
         LocalTime scanTime = openingTime;
         while (scanTime.plusMinutes(durationMinutes).isBefore(closingTime) && suggestions.size() < MAX_ALLOWED) {
