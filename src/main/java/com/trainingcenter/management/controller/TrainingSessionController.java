@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -32,9 +33,16 @@ public class TrainingSessionController {
 	}
 
 
-    @GetMapping
-    public ResponseEntity<List<TrainingSessionResponseDTO>> getAllSessions() {
-        return ResponseEntity.ok(sessionService.getAllSessions());
+    @GetMapping("/sessions-with-filter")
+    public ResponseEntity<List<TrainingSessionResponseDTO>> getAllSessions(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String instituteName,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String location) {
+        return ResponseEntity.ok(
+                sessionService.getSessionsWithFilters(category, instituteName, minPrice, maxPrice, location)
+        );
     }
 
     @GetMapping("/institute/{instituteId}")
@@ -45,6 +53,11 @@ public class TrainingSessionController {
     @GetMapping("/tenant/{tenantId}")
     public ResponseEntity<List<TrainingSessionResponseDTO>> getByTenant(@PathVariable Long tenantId) {
         return ResponseEntity.ok(sessionService.getByTenant(tenantId));
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<TrainingSessionResponseDTO>> getActiveSessions() {
+        return ResponseEntity.ok(sessionService.getActiveSessions());
     }
 
     @PutMapping("/{id}")

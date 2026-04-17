@@ -20,5 +20,16 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByTrainingSessionId(@Param("sessionId") Long sessionId);
 
     boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId,Long courseId);
+
+    @Query("""
+            SELECT FUNCTION('MONTH', e.createdAt), COUNT(e)
+            FROM Enrollment e
+            WHERE e.trainingSession.classRoom.institute.id = :instituteId
+              AND FUNCTION('YEAR', e.createdAt) = :year
+            GROUP BY FUNCTION('MONTH', e.createdAt)
+            ORDER BY FUNCTION('MONTH', e.createdAt)
+            """)
+    List<Object[]> getMonthlyRegistrationsByInstituteAndYear(@Param("instituteId") Long instituteId,
+                                                              @Param("year") Integer year);
 }
 

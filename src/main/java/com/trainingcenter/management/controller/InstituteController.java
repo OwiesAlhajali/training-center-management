@@ -2,6 +2,7 @@ package com.trainingcenter.management.controller;
 
 import com.trainingcenter.management.dto.InstituteRequestDTO;
 import com.trainingcenter.management.dto.InstituteResponseDTO;
+import com.trainingcenter.management.dto.MonthlyRegistrationStatDTO;
 import com.trainingcenter.management.service.InstituteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,13 @@ public class InstituteController {
     @GetMapping
     public ResponseEntity<List<InstituteResponseDTO>> getAll() {
         return ResponseEntity.ok(instituteService.getAllInstitutes());
+    }
+
+    @GetMapping("/{id}/registration-monthly")
+    public ResponseEntity<List<MonthlyRegistrationStatDTO>> getMonthlyRegistrations(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(instituteService.getMonthlyRegistrations(id, year));
     }
 
     @PutMapping("/{id}")

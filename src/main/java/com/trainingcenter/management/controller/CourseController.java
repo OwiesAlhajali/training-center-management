@@ -1,5 +1,6 @@
 package com.trainingcenter.management.controller;
 
+import com.trainingcenter.management.dto.ActiveCourseDTO;
 import com.trainingcenter.management.dto.CourseRequestDTO;
 import com.trainingcenter.management.dto.CourseResponseDTO;
 import com.trainingcenter.management.service.CourseService;
@@ -41,6 +42,11 @@ public class CourseController {
     @GetMapping("/tenant/{tenantId}")
     public ResponseEntity<List<CourseResponseDTO>> getByTenant(@PathVariable Long tenantId) {
         return ResponseEntity.ok(courseService.getCoursesByTenant(tenantId));
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<ActiveCourseDTO>> getActiveCourses() {
+        return ResponseEntity.ok(courseService.getActiveCourses());
     }
 
     @PutMapping("/{id}")
