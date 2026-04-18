@@ -116,7 +116,8 @@ public class EnrollmentService {
         return new EnrollmentResponseDTO(
                 e.getId(),
                 e.getStudent().getId(),
-                e.getTrainingSession().getId()
+                e.getTrainingSession().getId(),
+                e.getCreatedAt()
         );
     }
     //  read for the student id and for all student related to the TraningSession

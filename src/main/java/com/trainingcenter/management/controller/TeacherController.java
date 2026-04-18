@@ -2,6 +2,8 @@ package com.trainingcenter.management.controller;
 
 import com.trainingcenter.management.dto.TeacherRequestDTO;
 import com.trainingcenter.management.dto.TeacherResponseDTO;
+import com.trainingcenter.management.dto.TeacherCourseProgressDTO;
+import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.service.TeacherService;
 
 import jakarta.validation.Valid;
@@ -61,5 +63,15 @@ public class TeacherController {
         teacherService.deleteTeacher(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/course-progress")
+    public ResponseEntity<List<TeacherCourseProgressDTO>> getTeacherCourseProgress(@PathVariable Long id) {
+        return ResponseEntity.ok(teacherService.getTeacherCourseProgress(id));
+    }
+
+    @GetMapping("/{id}/weekly-schedule")
+    public ResponseEntity<List<WeeklyScheduleItemDTO>> getTeacherWeeklySchedule(@PathVariable Long id) {
+        return ResponseEntity.ok(teacherService.getTeacherWeeklySchedule(id));
     }
 }

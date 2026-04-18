@@ -41,5 +41,35 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
 
     List<Lecture> findByTrainingSession_Id(Long sessionId);
 
+    @Query("""
+            SELECT l FROM Lecture l
+            JOIN FETCH l.trainingSession ts
+            JOIN FETCH ts.course c
+            JOIN FETCH l.classRoom cr
+            JOIN FETCH l.teacher t
+            WHERE l.trainingSession.id IN (
+                SELECT e.trainingSession.id FROM Enrollment e WHERE e.student.id = :studentId
+            )
+            AND l.lectureDate BETWEEN :startDate AND :endDate
+            ORDER BY l.lectureDate, l.startTime
+            """)
+    List<Lecture> findStudentWeeklySchedule(@Param("studentId") Long studentId,
+                                            @Param("startDate") LocalDate startDate,
+                                            @Param("endDate") LocalDate endDate);
+
+    @Query("""
+            SELECT l FROM Lecture l
+            JOIN FETCH l.trainingSession ts
+            JOIN FETCH ts.course c
+            JOIN FETCH l.classRoom cr
+            JOIN FETCH l.teacher t
+            WHERE l.teacher.id = :teacherId
+            AND l.lectureDate BETWEEN :startDate AND :endDate
+            ORDER BY l.lectureDate, l.startTime
+            """)
+    List<Lecture> findTeacherWeeklySchedule(@Param("teacherId") Long teacherId,
+                                            @Param("startDate") LocalDate startDate,
+                                            @Param("endDate") LocalDate endDate);
+
     void deleteByTrainingSession_Id(Long sessionId);
 }

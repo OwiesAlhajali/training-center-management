@@ -1,9 +1,11 @@
 package com.trainingcenter.management.service;
 
+import com.trainingcenter.management.dto.ActiveCourseDTO;
 import com.trainingcenter.management.dto.CourseRequestDTO;
 import com.trainingcenter.management.dto.CourseResponseDTO;
 import com.trainingcenter.management.entity.Category;
 import com.trainingcenter.management.entity.Course;
+import com.trainingcenter.management.entity.SessionStatus;
 import com.trainingcenter.management.entity.Tenant;
 import com.trainingcenter.management.repository.CategoryRepository;
 import com.trainingcenter.management.repository.CourseRepository;
@@ -74,6 +76,12 @@ public class CourseService {
                 .collect(Collectors.toList());
     }
 
+    public List<ActiveCourseDTO> getActiveCourses() {
+        return courseRepository.findActiveCourseSummariesBySessionStatus(SessionStatus.ACTIVE).stream()
+                .map(this::mapToActiveCourse)
+                .collect(Collectors.toList());
+    }
+
    @Transactional
    public CourseResponseDTO updateCourse(Long id, CourseRequestDTO dto) {
    
@@ -113,6 +121,18 @@ public class CourseService {
                 .hours(course.getHours())
                 .categoryName(course.getCategory().getName())
                 .tenantName(course.getTenant().getName())
+                .build();
+    }
+
+    private ActiveCourseDTO mapToActiveCourse(Object[] row) {
+        return ActiveCourseDTO.builder()
+                .id((Long) row[0])
+                .name((String) row[1])
+                .description((String) row[2])
+                .hours((Integer) row[3])
+                .categoryName((String) row[4])
+                .tenantName((String) row[5])
+                .activeSessions(((Number) row[6]).longValue())
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.trainingcenter.management.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -9,8 +10,15 @@ import lombok.*;
 @AllArgsConstructor
 public class TeacherRequestDTO {
 
-    @NotNull(message = "User id is required")
+    // Backward-compatibility for existing flow that links to an existing user.
     private Long userId;
+
+    // Unified registration flow fields.
+    private String username;
+    private String email;
+    private String password;
+    private String confirmPassword;
+    private String phone;
 
     @NotBlank(message = "First name is required")
     private String firstName;
@@ -27,6 +35,7 @@ public class TeacherRequestDTO {
 
     private String cv;
 
+    @JsonAlias("yearsOfExperience")
     @Min(value = 0, message = "Experience must be >= 0")
     private Integer experienceYears;
 }

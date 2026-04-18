@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,6 +39,41 @@ public class TrainingSessionService {
                 .collect(Collectors.toList());
     }
 
+    public List<TrainingSessionResponseDTO> getSessionsWithFilters(String category,
+                                                                   String instituteName,
+                                                                   BigDecimal minPrice,
+                                                                   BigDecimal maxPrice,
+                                                                   String location) {
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new BadRequestException("Invalid price range: minPrice cannot be greater than maxPrice");
+        }
+
+        String normalizedCategory = normalizeText(category);
+        String normalizedInstituteName = normalizeText(instituteName);
+        String normalizedLocation = normalizeText(location);
+
+        Long categoryId = null;
+        String categoryName = null;
+        if (normalizedCategory != null) {
+            try {
+                categoryId = Long.parseLong(normalizedCategory);
+            } catch (NumberFormatException ex) {
+                categoryName = normalizedCategory;
+            }
+        }
+
+        return sessionRepository.findWithFilters(
+                        categoryId,
+                        categoryName,
+                        normalizedInstituteName,
+                        normalizedLocation,
+                        minPrice,
+                        maxPrice
+                ).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<TrainingSessionResponseDTO> getByInstitute(Long instituteId) {
         return sessionRepository.findByInstituteId(instituteId).stream()
                 .map(this::mapToResponse)
@@ -46,6 +82,12 @@ public class TrainingSessionService {
 
     public List<TrainingSessionResponseDTO> getByTenant(Long tenantId) {
         return sessionRepository.findByTenantId(tenantId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<TrainingSessionResponseDTO> getActiveSessions() {
+        return sessionRepository.findByStatus(SessionStatus.ACTIVE).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -154,6 +196,14 @@ public void deleteSession(Long id) {
     
     sessionRepository.delete(session);
 }
+
+    private String normalizeText(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
 
     private TrainingSessionResponseDTO mapToResponse(TrainingSession session) {
         return TrainingSessionResponseDTO.builder()

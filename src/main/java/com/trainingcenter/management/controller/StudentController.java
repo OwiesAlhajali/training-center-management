@@ -1,7 +1,10 @@
 package com.trainingcenter.management.controller;
 
+import com.trainingcenter.management.dto.StudentCompletionPercentageDTO;
 import com.trainingcenter.management.dto.StudentRequestDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
+import com.trainingcenter.management.dto.StudentTrainingHoursDTO;
+import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,5 +49,20 @@ public class StudentController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
+    }
+
+    @GetMapping("/{id}/training-hours")
+    public StudentTrainingHoursDTO getStudentTrainingHours(@PathVariable Long id) {
+        return studentService.getStudentTrainingHours(id);
+    }
+
+    @GetMapping("/{id}/completion-percentage")
+    public StudentCompletionPercentageDTO getStudentCompletionPercentage(@PathVariable Long id) {
+        return studentService.getStudentCompletionPercentage(id);
+    }
+
+    @GetMapping("/{id}/weekly-schedule")
+    public List<WeeklyScheduleItemDTO> getStudentWeeklySchedule(@PathVariable Long id) {
+        return studentService.getStudentWeeklySchedule(id);
     }
 }
