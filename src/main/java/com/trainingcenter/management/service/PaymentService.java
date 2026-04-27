@@ -9,6 +9,7 @@ import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.PaymentRepository;
 import com.trainingcenter.management.repository.StudentRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
+import com.trainingcenter.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -25,15 +26,19 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
     private final TrainingSessionRepository trainingSessionRepository;
+    private final UserRepository userRepository;
 
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
 
     @Transactional
     public String initiatePayment(Long sessionId) throws StripeException {
-        // Get current user from security context
+        // Get current authenticated user's email from security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) authentication.getPrincipal();
+        String userEmail = authentication.getName();
+
+        User user = userRepository.findByEmail(userEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found for email: " + userEmail));
 
         // Get student
         Student student = studentRepository.findByUser(user);
