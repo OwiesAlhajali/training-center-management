@@ -18,7 +18,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Training Center Management API")
-                        .version("v1")
+                        .version("v2")
                         .description("API documentation for Training Center Management System")
                         .contact(new Contact().name("Backend Team")))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
