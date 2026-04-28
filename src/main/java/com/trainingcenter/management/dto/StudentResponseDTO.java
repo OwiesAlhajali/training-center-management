@@ -3,13 +3,13 @@ package com.trainingcenter.management.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Data
 @Builder
-@Getter
+@NoArgsConstructor
 @AllArgsConstructor
 public class StudentResponseDTO {
 
@@ -29,5 +29,10 @@ public class StudentResponseDTO {
 
     private LocalDate enrollmentDate;
 
+    // User info
     private Long userId;
+    private String username;
+    private String email;
+    private String contactInfo;
+    private String image;
 }

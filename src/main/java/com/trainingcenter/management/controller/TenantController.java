@@ -1,4 +1,4 @@
-package com.trainingcenter.management.controller;
+/**package com.trainingcenter.management.controller;
 
 import com.trainingcenter.management.dto.TenantRequestDTO;
 import com.trainingcenter.management.dto.TenantResponseDTO;
@@ -44,4 +44,5 @@ public class TenantController {
         return ResponseEntity.noContent().build();
     }
 }
+**/
 

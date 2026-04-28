@@ -25,5 +25,10 @@ public class TeacherResponseDTO {
 
     private Integer experienceYears;
 
+    // User info
     private Long userId;
+    private String username;
+    private String email;
+    private String contactInfo;
+    private String image;
 }

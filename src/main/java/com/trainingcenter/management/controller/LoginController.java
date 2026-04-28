@@ -26,11 +26,11 @@ public class LoginController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
 
         // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new ResourceNotFoundException("Invalid credentials");
+            throw new ResourceNotFoundException("Invalid email or password");
         }
 
         LoginResponseDTO response = LoginResponseDTO.builder()

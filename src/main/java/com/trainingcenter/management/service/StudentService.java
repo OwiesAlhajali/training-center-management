@@ -109,7 +109,8 @@ public class StudentService {
         student.setAddress(request.getAddress());
         student.setInterest(request.getInterest());
 
-        return mapToResponse(student);
+        Student updatedStudent = studentRepository.save(student);
+        return mapToResponse(updatedStudent);
     }
 
     public void deleteStudent(Long id) {
@@ -199,7 +200,7 @@ public class StudentService {
 
     //MAPPER
     private StudentResponseDTO mapToResponse(Student student) {
-
+        User user = student.getUser();
         return StudentResponseDTO.builder()
                 .id(student.getId())
                 .firstName(student.getFirstName())
@@ -209,7 +210,11 @@ public class StudentService {
                 .enrollmentDate(student.getEnrollmentDate())
                 .address(student.getAddress())
                 .interest(student.getInterest())
-                .userId(student.getUser().getId())
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .contactInfo(user.getContactInfo())
+                .image(user.getImage())
                 .build();
     }
 }
