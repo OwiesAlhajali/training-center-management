@@ -5,6 +5,7 @@ import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.repository.OtpRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
@@ -44,6 +45,9 @@ public class OtpService {
 
     @Transactional
     public void verifyOtp(String email, String code) {
+        // Clean expired OTPs first
+        otpRepository.deleteExpiredOtps(LocalDateTime.now());
+
         OtpEntry otp = otpRepository.findTopByEmailAndUsedFalseOrderByExpiryDateDesc(email)
                 .orElseThrow(() -> new BadRequestException("No active code found"));
 
@@ -57,5 +61,12 @@ public class OtpService {
 
         otp.setUsed(true);
         otpRepository.save(otp);
+    }
+
+    // Scheduled task to clean up expired OTPs every 15 minutes
+    @Scheduled(fixedRate = 900000) // 15 minutes = 900000 ms
+    @Transactional
+    public void cleanupExpiredOtps() {
+        otpRepository.deleteExpiredOtps(LocalDateTime.now());
     }
 }
