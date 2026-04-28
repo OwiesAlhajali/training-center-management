@@ -1,3 +1,4 @@
+/**
 package com.trainingcenter.management.security;
 
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class SecurityConfig {
     /**
      * Configure password encoder (BCrypt for security)
      */
-    @Bean
+    /**@Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -32,7 +33,7 @@ public class SecurityConfig {
     /**
      * Configure authentication provider to use custom UserDetailsService
      */
-    @Bean
+   /** @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(customUserDetailsService);
@@ -43,7 +44,7 @@ public class SecurityConfig {
     /**
      * Configure authentication manager
      */
-    @Bean
+   /** @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
         authBuilder.authenticationProvider(authenticationProvider());
@@ -56,7 +57,7 @@ public class SecurityConfig {
      * - Require authentication for POST, PUT, DELETE endpoints
      * - Use HTTP Basic authentication for now (easily replaceable with JWT)
      */
-    @Bean
+    /**@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // Authorize requests
@@ -95,5 +96,33 @@ public class SecurityConfig {
         return http.build();
     }
 }
+**/
 
+package com.trainingcenter.management.security;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
+                )
+                .httpBasic(httpBasic -> httpBasic.disable())
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
+
+        return http.build();
+    }
+}
