@@ -5,6 +5,7 @@ import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.entity.Enrollment;
 import com.trainingcenter.management.entity.Student;
 import com.trainingcenter.management.entity.TrainingSession;
+import com.trainingcenter.management.entity.User;
 import com.trainingcenter.management.exception.DuplicateResourceException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.EnrollmentRepository;
@@ -80,8 +81,10 @@ public class EnrollmentService {
 
     public List<EnrollmentResponseDTO> getEnrollmentsBySession(Long sessionId) {
 
-        TrainingSession session = trainingSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Training session not found"));
+        // Validate session exists
+        if (!trainingSessionRepository.existsById(sessionId)) {
+            throw new ResourceNotFoundException("Training session not found");
+        }
 
         List<Enrollment> enrollments = enrollmentRepository.findByTrainingSessionId(sessionId);
 
@@ -98,17 +101,22 @@ public class EnrollmentService {
 
     // Mapping
     private StudentResponseDTO mapStudentToDTO(Student s) {
-        return new StudentResponseDTO(
-                s.getId(),
-                s.getFirstName(),
-                s.getLastName(),
-                s.getGender(),
-                s.getBirthDate(),
-                s.getAddress(),
-                s.getInterest(),
-                s.getEnrollmentDate(),
-                s.getUser().getId()
-        );
+        User user = s.getUser();
+        return StudentResponseDTO.builder()
+                .id(s.getId())
+                .firstName(s.getFirstName())
+                .lastName(s.getLastName())
+                .gender(s.getGender())
+                .birthDate(s.getBirthDate())
+                .address(s.getAddress())
+                .interest(s.getInterest())
+                .enrollmentDate(s.getEnrollmentDate())
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .contactInfo(user.getContactInfo())
+                .image(user.getImage())
+                .build();
     }
 
     // Mapping
