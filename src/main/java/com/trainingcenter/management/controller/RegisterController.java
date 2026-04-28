@@ -1,4 +1,4 @@
-package com.trainingcenter.management.controller;
+/**package com.trainingcenter.management.controller;
 
 import com.trainingcenter.management.dto.RegisterRequestDTO;
 import com.trainingcenter.management.dto.RegisterResponseDTO;
@@ -33,4 +33,4 @@ public class RegisterController {
         RegisterResponseDTO response = registerService.getById(id);
         return ResponseEntity.ok(response);
     }
-}
+}**/
