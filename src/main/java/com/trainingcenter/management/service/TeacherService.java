@@ -198,9 +198,14 @@ public class TeacherService {
 
 
     private TeacherResponseDTO mapToResponse(Teacher teacher) {
+        User user = teacher.getUser();
         return TeacherResponseDTO.builder()
                 .id(teacher.getId())
-                .userId(teacher.getUser().getId())
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .contactInfo(user.getContactInfo())
+                .image(user.getImage())
                 .firstName(teacher.getFirstName())
                 .lastName(teacher.getLastName())
                 .specialization(teacher.getSpecialization())
