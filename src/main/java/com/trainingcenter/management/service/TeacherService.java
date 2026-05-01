@@ -17,6 +17,7 @@ import com.trainingcenter.management.repository.TrainingSessionRepository;
 import com.trainingcenter.management.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class TeacherService {
     private final PasswordEncoder passwordEncoder;
     private final TrainingSessionRepository trainingSessionRepository;
     private final LectureRepository lectureRepository;
+    private final ImageKitUploadService imageKitUploadService;
 
     @Transactional
     public TeacherResponseDTO createTeacher(TeacherRequestDTO requestDTO) {
@@ -214,5 +216,17 @@ public class TeacherService {
                 .cv(teacher.getCv())
                 .experienceYears(teacher.getExperienceYears())
                 .build();
+    }
+
+    public TeacherResponseDTO uploadTeacherImage(Long teacherId, MultipartFile imageFile) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + teacherId));
+
+        User user = teacher.getUser();
+        String imageUrl = imageKitUploadService.uploadImage(imageFile);
+        user.setImage(imageUrl);
+        userRepository.save(user);
+
+        return mapToResponse(teacher);
     }
 }

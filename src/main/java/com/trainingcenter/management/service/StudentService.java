@@ -17,6 +17,7 @@ import com.trainingcenter.management.repository.LectureRepository;
 import com.trainingcenter.management.repository.StudentRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,7 @@ public class StudentService {
     private final PasswordEncoder passwordEncoder;
     private final AttendanceRepository attendanceRepository;
     private final LectureRepository lectureRepository;
+    private final ImageKitUploadService imageKitUploadService;
 
     public StudentResponseDTO createStudent(StudentRequestDTO request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
@@ -216,5 +218,17 @@ public class StudentService {
                 .contactInfo(user.getContactInfo())
                 .image(user.getImage())
                 .build();
+    }
+
+    public StudentResponseDTO uploadStudentImage(Long studentId, MultipartFile imageFile) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        User user = student.getUser();
+        String imageUrl = imageKitUploadService.uploadImage(imageFile);
+        user.setImage(imageUrl);
+        userRepository.save(user);
+
+        return mapToResponse(student);
     }
 }

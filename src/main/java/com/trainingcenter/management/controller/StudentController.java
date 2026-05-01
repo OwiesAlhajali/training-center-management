@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -64,5 +66,11 @@ public class StudentController {
     @GetMapping("/{id}/weekly-schedule")
     public List<WeeklyScheduleItemDTO> getStudentWeeklySchedule(@PathVariable Long id) {
         return studentService.getStudentWeeklySchedule(id);
+    }
+
+    @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public StudentResponseDTO uploadStudentImage(@PathVariable Long id,
+                                                 @RequestParam("image") MultipartFile image) {
+        return studentService.uploadStudentImage(id, image);
     }
 }

@@ -7,6 +7,7 @@ import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,12 +25,24 @@ public class TrainingSessionService {
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
     private final LectureService lectureService;
+    private final ImageKitUploadService imageKitUploadService;
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
         TrainingSession session = sessionRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
        return mapToResponse(session);
+    }
+
+    @Transactional
+    public TrainingSessionResponseDTO uploadSessionImage(Long id, MultipartFile imageFile) {
+        TrainingSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
+
+        String imageUrl = imageKitUploadService.uploadImage(imageFile);
+        session.setImage(imageUrl);
+
+        return mapToResponse(sessionRepository.save(session));
     }
   
 
@@ -213,6 +226,7 @@ public void deleteSession(Long id) {
                 .minSeats(session.getMinSeats())
                 .numberOfLectures(session.getNumberOfLectures())
 		.requiredEquipment(session.getRequiredEquipment())
+                .image(session.getImage())
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .courseName(session.getCourse().getName())

@@ -33,4 +33,4 @@ public class RegisterController {
         RegisterResponseDTO response = registerService.getById(id);
         return ResponseEntity.ok(response);
     }
-}**/
+}

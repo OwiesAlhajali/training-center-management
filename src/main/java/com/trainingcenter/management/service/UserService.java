@@ -7,6 +7,7 @@ import com.trainingcenter.management.exception.DuplicateResourceException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,9 +19,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    private final ImageKitUploadService imageKitUploadService;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, ImageKitUploadService imageKitUploadService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.imageKitUploadService = imageKitUploadService;
     }
 
     public UserResponseDTO createUser(UserRequestDTO dto) {
@@ -89,6 +93,17 @@ public class UserService {
                 );
 
         userRepository.delete(user);
+    }
+
+    public UserResponseDTO uploadUserImage(Long userId, MultipartFile imageFile) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        String imageUrl = imageKitUploadService.uploadImage(imageFile);
+        user.setImage(imageUrl);
+        userRepository.save(user);
+
+        return mapToResponse(user);
     }
 
     private User mapToEntity(UserRequestDTO dto) {

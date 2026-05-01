@@ -6,8 +6,10 @@ import com.trainingcenter.management.service.TrainingSessionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -65,6 +67,13 @@ public class TrainingSessionController {
             @PathVariable Long id, 
             @Valid @RequestBody TrainingSessionRequestDTO requestDTO) {
         return ResponseEntity.ok(sessionService.updateSession(id, requestDTO));
+    }
+
+    @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TrainingSessionResponseDTO> uploadSessionImage(
+            @PathVariable Long id,
+            @RequestParam("image") MultipartFile imageFile) {
+        return ResponseEntity.ok(sessionService.uploadSessionImage(id, imageFile));
     }
 
     @DeleteMapping("/{id}")

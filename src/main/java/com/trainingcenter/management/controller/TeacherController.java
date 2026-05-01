@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -73,5 +75,12 @@ public class TeacherController {
     @GetMapping("/{id}/weekly-schedule")
     public ResponseEntity<List<WeeklyScheduleItemDTO>> getTeacherWeeklySchedule(@PathVariable Long id) {
         return ResponseEntity.ok(teacherService.getTeacherWeeklySchedule(id));
+    }
+
+    @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TeacherResponseDTO> uploadTeacherImage(@PathVariable Long id,
+                                                                 @RequestParam("image") MultipartFile image) {
+        TeacherResponseDTO response = teacherService.uploadTeacherImage(id, image);
+        return ResponseEntity.ok(response);
     }
 }

@@ -53,41 +53,37 @@ public class SecurityConfig {
 
     /**
      * Configure HTTP security filter chain
-     * - Allow public GET access to read endpoints, registration, login, and health
-     * - Require authentication for POST, PUT, DELETE endpoints
-     * - Use HTTP Basic authentication for now (easily replaceable with JWT)
+     * - Keep frontend integration simple: most endpoints are public
+     * - Restrict only important management endpoints to ADMIN
+     * - Disable Spring Security default form login page
      */
     /**@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // Authorize requests
                 .authorizeHttpRequests(auth -> auth
-                        // Authentication endpoints - POST allowed (for login)
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/**").permitAll()
-                        // Health and Swagger - GET only
-                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                // Public endpoints for auth/health/docs/webhooks
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/otp/send", "/api/otp/verify").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/webhook/**", "/api/webhooks/**").permitAll()
 
-                        // Public GET endpoints - read-only (GET only)
-                        .requestMatchers(HttpMethod.GET, "/api/registers/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/training-sessions/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/institutes/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/classrooms/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/lectures/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/quizzes/**").permitAll()
+                // ADMIN-only on users and important tables
+                .requestMatchers(HttpMethod.POST, "/api/users/**", "/api/tenants/**", "/api/registers/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/users/**", "/api/tenants/**", "/api/registers/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/users/**", "/api/tenants/**", "/api/registers/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**", "/api/tenants/**", "/api/registers/**").hasRole("ADMIN")
 
-                        // Webhook - allow unauthenticated (verified by Stripe signature)
-                        .requestMatchers("/webhook/**").permitAll()
-                        .requestMatchers("/api/webhooks/**").permitAll()
+                // Payment initiation requires logged-in user
+                .requestMatchers("/api/payments/**").authenticated()
 
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
+                // Keep the rest open for easy frontend integration
+                .anyRequest().permitAll()
                 )
                 // Use HTTP Basic authentication
                 .httpBasic(basic -> {})
+                // Disable default Spring Security generated login page
+                .formLogin(form -> form.disable())
                 // Disable CSRF for simplicity (enable later for form-based apps)
                 .csrf(csrf -> csrf.disable())
                 // Use stateless session for API (JWT-ready)
