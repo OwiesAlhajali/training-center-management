@@ -1,4 +1,4 @@
-package com.trainingcenter.management.controller;
+/* package com.trainingcenter.management.controller;
 
 import com.trainingcenter.management.dto.UserRequestDTO;
 import com.trainingcenter.management.dto.UserResponseDTO;
@@ -49,3 +49,4 @@ public class UserController {
         userService.deleteUser(id);
     }
 }
+*/
