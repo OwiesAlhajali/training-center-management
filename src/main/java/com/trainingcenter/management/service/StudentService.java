@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -35,6 +36,7 @@ public class StudentService {
     private final PasswordEncoder passwordEncoder;
     private final AttendanceRepository attendanceRepository;
     private final LectureRepository lectureRepository;
+    private final ImageService imageService;
 
     public StudentResponseDTO createStudent(StudentRequestDTO request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
@@ -121,6 +123,22 @@ public class StudentService {
         studentRepository.delete(student);
     }
 
+    /**
+     * Uploads a student profile image and stores the Cloudinary URL in User.image.
+     */
+    public StudentResponseDTO updateProfileImage(Long id, MultipartFile file) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        User user = student.getUser();
+
+        String imageUrl = imageService.uploadImage(file);
+        user.setImage(imageUrl);
+        userRepository.save(user);
+
+        return mapToResponse(student);
+    }
+
     @Transactional(readOnly = true)
     public StudentTrainingHoursDTO getStudentTrainingHours(Long studentId) {
         ensureStudentExists(studentId);
@@ -198,7 +216,7 @@ public class StudentService {
         }
     }
 
-    //MAPPER
+    // Mapper
     private StudentResponseDTO mapToResponse(Student student) {
         User user = student.getUser();
         return StudentResponseDTO.builder()

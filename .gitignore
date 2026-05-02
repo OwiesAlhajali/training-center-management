@@ -34,3 +34,11 @@ build/
 
 ##h2##
 /src/main/resources/application-local.properties
+
+# Local uploads
+uploads/
+
+# Project-specific docs generated during implementation
+IMAGE_UPLOAD_DOCUMENTATION.md
+IMAGE_UPLOAD_TESTING_GUIDE.md
+IMAGE_UPLOAD_COMPLETE_FLOW.md
