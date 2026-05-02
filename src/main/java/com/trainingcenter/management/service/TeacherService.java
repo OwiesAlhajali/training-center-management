@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.time.LocalDate;
@@ -36,6 +37,7 @@ public class TeacherService {
     private final PasswordEncoder passwordEncoder;
     private final TrainingSessionRepository trainingSessionRepository;
     private final LectureRepository lectureRepository;
+    private final ImageService imageService;
 
     @Transactional
     public TeacherResponseDTO createTeacher(TeacherRequestDTO requestDTO) {
@@ -140,6 +142,23 @@ public class TeacherService {
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + id));
 
         teacherRepository.delete(teacher);
+    }
+
+    /**
+     * Uploads a teacher profile image and stores the Cloudinary URL in User.image.
+     */
+    @Transactional
+    public TeacherResponseDTO updateProfileImage(Long id, MultipartFile file) {
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + id));
+
+        User user = teacher.getUser();
+
+        String imageUrl = imageService.uploadImage(file);
+        user.setImage(imageUrl);
+        userRepository.save(user);
+
+        return mapToResponse(teacher);
     }
 
     public List<TeacherCourseProgressDTO> getTeacherCourseProgress(Long teacherId) {
