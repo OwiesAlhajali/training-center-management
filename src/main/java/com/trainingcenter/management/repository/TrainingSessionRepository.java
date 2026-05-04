@@ -56,4 +56,11 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
                                             @Param("cancelledStatus") SessionStatus cancelledStatus);
 
     List<TrainingSession> findByStatus(SessionStatus status);
+
+    @Query("""
+            SELECT ts FROM TrainingSession ts
+            JOIN ts.course c
+            WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :courseName, '%'))
+            """)
+    List<TrainingSession> searchByCourseName(@Param("courseName") String courseName);
 }
