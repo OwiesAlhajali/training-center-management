@@ -210,6 +210,15 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
     return mapToResponse(session);
 }
 
+    public List<TrainingSessionResponseDTO> searchByCourseName(String courseName) {
+        if (courseName == null || courseName.trim().isEmpty()) {
+            throw new BadRequestException("Course name cannot be empty");
+        }
+        return sessionRepository.searchByCourseName(courseName).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private String normalizeText(String value) {
         if (value == null) {
             return null;

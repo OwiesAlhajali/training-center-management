@@ -81,4 +81,10 @@ public class TrainingSessionController {
         TrainingSessionResponseDTO updatedSession = sessionService.updateSessionImage(id, file);
         return ResponseEntity.ok(updatedSession);
     }
+
+    @GetMapping("/search/by-name")
+    public ResponseEntity<List<TrainingSessionResponseDTO>> searchByCourseName(
+            @RequestParam String name) {
+        return ResponseEntity.ok(sessionService.searchByCourseName(name));
+    }
 }
