@@ -31,6 +31,8 @@ public class TrainingSession {
  
     @Column(name = "required_equipment")
     private String requiredEquipment;
+
+    private String image;
      
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

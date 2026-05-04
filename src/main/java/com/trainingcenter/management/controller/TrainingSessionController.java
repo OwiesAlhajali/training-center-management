@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -71,5 +72,19 @@ public class TrainingSessionController {
     public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
         sessionService.deleteSession(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/image")
+    public ResponseEntity<TrainingSessionResponseDTO> updateSessionImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        TrainingSessionResponseDTO updatedSession = sessionService.updateSessionImage(id, file);
+        return ResponseEntity.ok(updatedSession);
+    }
+
+    @GetMapping("/search/by-name")
+    public ResponseEntity<List<TrainingSessionResponseDTO>> searchByCourseName(
+            @RequestParam String name) {
+        return ResponseEntity.ok(sessionService.searchByCourseName(name));
     }
 }

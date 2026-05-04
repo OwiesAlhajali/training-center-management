@@ -12,5 +12,7 @@ public class InstituteResponseDTO {
     private String description;
     private String location;
     private String ownerName; //from User
+    private String email; // from User
+    private String contactInfo; // from User
     private String tenantName; // from Tenant
 }

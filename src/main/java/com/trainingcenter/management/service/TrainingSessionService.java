@@ -24,6 +24,7 @@ public class TrainingSessionService {
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
     private final LectureService lectureService;
+    private final ImageService imageService;
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
@@ -197,6 +198,27 @@ public void deleteSession(Long id) {
     sessionRepository.delete(session);
 }
 
+@Transactional
+public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframework.web.multipart.MultipartFile file) {
+    TrainingSession session = sessionRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
+
+    String imageUrl = imageService.uploadImage(file);
+    session.setImage(imageUrl);
+    sessionRepository.save(session);
+
+    return mapToResponse(session);
+}
+
+    public List<TrainingSessionResponseDTO> searchByCourseName(String courseName) {
+        if (courseName == null || courseName.trim().isEmpty()) {
+            throw new BadRequestException("Course name cannot be empty");
+        }
+        return sessionRepository.searchByCourseName(courseName).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private String normalizeText(String value) {
         if (value == null) {
             return null;
@@ -216,9 +238,11 @@ public void deleteSession(Long id) {
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .courseName(session.getCourse().getName())
+                .courseDescription(session.getCourse().getDescription())
                 .classroomName(session.getClassRoom().getNumber())
                 .teacherName(session.getTeacher().getUser().getUsername())
                 .instituteName(session.getClassRoom().getInstitute().getName())
+                .image(session.getImage())
                 .build();
     }
 }
