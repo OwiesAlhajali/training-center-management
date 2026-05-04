@@ -117,6 +117,8 @@ public class InstituteService {
                 .description(institute.getDescription())
                 .location(institute.getLocation())
                 .ownerName(institute.getUser() != null ? institute.getUser().getUsername() : "No Owner")
+                .email(institute.getUser() != null ? institute.getUser().getEmail() : null)
+                .contactInfo(institute.getUser() != null ? institute.getUser().getContactInfo() : null)
                 .tenantName(institute.getTenant() != null ? institute.getTenant().getName() : "No Tenant")
                 .build();
     }
