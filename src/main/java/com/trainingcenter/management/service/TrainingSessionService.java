@@ -216,6 +216,7 @@ public void deleteSession(Long id) {
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .courseName(session.getCourse().getName())
+                .courseDescription(session.getCourse().getDescription())
                 .classroomName(session.getClassRoom().getNumber())
                 .teacherName(session.getTeacher().getUser().getUsername())
                 .instituteName(session.getClassRoom().getInstitute().getName())
