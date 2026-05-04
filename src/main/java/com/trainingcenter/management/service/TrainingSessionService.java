@@ -24,6 +24,7 @@ public class TrainingSessionService {
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
     private final LectureService lectureService;
+    private final ImageService imageService;
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
@@ -197,6 +198,18 @@ public void deleteSession(Long id) {
     sessionRepository.delete(session);
 }
 
+@Transactional
+public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframework.web.multipart.MultipartFile file) {
+    TrainingSession session = sessionRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
+
+    String imageUrl = imageService.uploadImage(file);
+    session.setImage(imageUrl);
+    sessionRepository.save(session);
+
+    return mapToResponse(session);
+}
+
     private String normalizeText(String value) {
         if (value == null) {
             return null;
@@ -220,6 +233,7 @@ public void deleteSession(Long id) {
                 .classroomName(session.getClassRoom().getNumber())
                 .teacherName(session.getTeacher().getUser().getUsername())
                 .instituteName(session.getClassRoom().getInstitute().getName())
+                .image(session.getImage())
                 .build();
     }
 }
