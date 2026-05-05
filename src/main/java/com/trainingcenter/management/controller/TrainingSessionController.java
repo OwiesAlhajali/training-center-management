@@ -37,12 +37,13 @@ public class TrainingSessionController {
     @GetMapping("/sessions-with-filter")
     public ResponseEntity<List<TrainingSessionResponseDTO>> getAllSessions(
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) String courseName,
             @RequestParam(required = false) String instituteName,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String location) {
         return ResponseEntity.ok(
-                sessionService.getSessionsWithFilters(category, instituteName, minPrice, maxPrice, location)
+                sessionService.getSessionsWithFilters(category, courseName, instituteName, minPrice, maxPrice, location)
         );
     }
 
