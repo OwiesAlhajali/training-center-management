@@ -7,6 +7,7 @@ import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,7 @@ public class TrainingSessionService {
     }
 
     public List<TrainingSessionResponseDTO> getSessionsWithFilters(String category,
+                                                                   String courseName,
                                                                    String instituteName,
                                                                    BigDecimal minPrice,
                                                                    BigDecimal maxPrice,
@@ -50,6 +52,7 @@ public class TrainingSessionService {
         }
 
         String normalizedCategory = normalizeText(category);
+        String normalizedCourseName = normalizeText(courseName);
         String normalizedInstituteName = normalizeText(instituteName);
         String normalizedLocation = normalizeText(location);
 
@@ -63,14 +66,18 @@ public class TrainingSessionService {
             }
         }
 
-        return sessionRepository.findWithFilters(
-                        categoryId,
-                        categoryName,
-                        normalizedInstituteName,
-                        normalizedLocation,
-                        minPrice,
-                        maxPrice
-                ).stream()
+        // Build the dynamic Specification
+        Specification<TrainingSession> spec = TrainingSessionSpecification.withFilters(
+                categoryId,
+                categoryName,
+                normalizedCourseName,
+                normalizedInstituteName,
+                normalizedLocation,
+                minPrice,
+                maxPrice
+        );
+
+        return sessionRepository.findAll(spec).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
