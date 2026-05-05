@@ -7,6 +7,7 @@ import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,14 +64,17 @@ public class TrainingSessionService {
             }
         }
 
-        return sessionRepository.findWithFilters(
-                        categoryId,
-                        categoryName,
-                        normalizedInstituteName,
-                        normalizedLocation,
-                        minPrice,
-                        maxPrice
-                ).stream()
+        // Build the dynamic Specification
+        Specification<TrainingSession> spec = TrainingSessionSpecification.withFilters(
+                categoryId,
+                categoryName,
+                normalizedInstituteName,
+                normalizedLocation,
+                minPrice,
+                maxPrice
+        );
+
+        return sessionRepository.findAll(spec).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
