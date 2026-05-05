@@ -42,6 +42,7 @@ public class TrainingSessionService {
     }
 
     public List<TrainingSessionResponseDTO> getSessionsWithFilters(String category,
+                                                                   String courseName,
                                                                    String instituteName,
                                                                    BigDecimal minPrice,
                                                                    BigDecimal maxPrice,
@@ -51,6 +52,7 @@ public class TrainingSessionService {
         }
 
         String normalizedCategory = normalizeText(category);
+        String normalizedCourseName = normalizeText(courseName);
         String normalizedInstituteName = normalizeText(instituteName);
         String normalizedLocation = normalizeText(location);
 
@@ -68,6 +70,7 @@ public class TrainingSessionService {
         Specification<TrainingSession> spec = TrainingSessionSpecification.withFilters(
                 categoryId,
                 categoryName,
+                normalizedCourseName,
                 normalizedInstituteName,
                 normalizedLocation,
                 minPrice,

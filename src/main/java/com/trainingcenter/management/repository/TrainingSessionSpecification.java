@@ -16,6 +16,7 @@ public class TrainingSessionSpecification {
      * 
      * @param categoryId Category ID (optional)
      * @param categoryName Category name (optional)
+     * @param courseName Course name (optional)
      * @param instituteName Institute name (optional)
      * @param location Location (optional)
      * @param minPrice Minimum price (optional)
@@ -25,6 +26,7 @@ public class TrainingSessionSpecification {
     public static Specification<TrainingSession> withFilters(
             Long categoryId,
             String categoryName,
+            String courseName,
             String instituteName,
             String location,
             BigDecimal minPrice,
@@ -45,6 +47,13 @@ public class TrainingSessionSpecification {
                 predicates.add(criteriaBuilder.equal(
                     criteriaBuilder.lower(root.join("course").join("category").get("name")),
                     categoryName.toLowerCase()));
+            }
+            
+            // ===== Course Name Filter =====
+            if (courseName != null && !courseName.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                    criteriaBuilder.lower(root.join("course").get("name")),
+                    "%" + courseName.toLowerCase() + "%"));
             }
             
             // ===== Institute Name Filter =====
