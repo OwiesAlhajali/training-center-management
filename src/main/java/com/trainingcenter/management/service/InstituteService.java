@@ -12,6 +12,7 @@ import com.trainingcenter.management.repository.InstituteRepository;
 import com.trainingcenter.management.repository.TenantRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
@@ -48,6 +49,7 @@ public class InstituteService {
         return mapToResponse(instituteRepository.save(institute));
     }
 
+    @Transactional(readOnly = true)
     public List<InstituteResponseDTO> getInstitutesByTenant(Long tenantId) {
         if (!tenantRepository.existsById(tenantId)) {
             throw new ResourceNotFoundException("Tenant not found");
@@ -57,12 +59,17 @@ public class InstituteService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public InstituteResponseDTO getInstituteById(Long id) {
         Institute institute = instituteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Institute not found"));
+        // mapToResponse accesses lazy associations; calling it inside the
+        // transactional boundary ensures those properties are initialized
+        // before JSON serialization outside the service.
         return mapToResponse(institute);
     }
 
+    @Transactional(readOnly = true)
     public List<InstituteResponseDTO> getAllInstitutes() {
         return instituteRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -88,6 +95,7 @@ public class InstituteService {
         instituteRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
     public List<MonthlyRegistrationStatDTO> getMonthlyRegistrations(Long instituteId, Integer year) {
         if (!instituteRepository.existsById(instituteId)) {
             throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
