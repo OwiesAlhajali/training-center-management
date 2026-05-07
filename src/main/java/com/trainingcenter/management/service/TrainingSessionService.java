@@ -247,8 +247,10 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
                 .courseName(session.getCourse().getName())
                 .courseDescription(session.getCourse().getDescription())
                 .classroomName(session.getClassRoom().getNumber())
-                .teacherName(session.getTeacher().getUser().getUsername())
+                .teacherName(session.getTeacher() != null && session.getTeacher().getUser() != null ? session.getTeacher().getUser().getUsername() : null)
+                .teacherId(session.getTeacher() != null ? session.getTeacher().getId() : null)
                 .instituteName(session.getClassRoom().getInstitute().getName())
+                .instituteId(session.getClassRoom().getInstitute() != null ? session.getClassRoom().getInstitute().getId() : null)
                 .image(session.getImage())
                 .build();
     }
