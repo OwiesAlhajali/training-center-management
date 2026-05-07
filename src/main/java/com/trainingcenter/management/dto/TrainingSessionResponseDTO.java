@@ -20,6 +20,8 @@ public class TrainingSessionResponseDTO {
     private String courseDescription;
     private String classroomName;
     private String teacherName;
+    private Long teacherId;
     private String instituteName;
+    private Long instituteId;
     private String image;
 }
