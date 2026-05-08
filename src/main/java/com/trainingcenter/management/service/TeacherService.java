@@ -103,6 +103,7 @@ public class TeacherService {
     }
 
 
+    @Transactional(readOnly = true)
     public TeacherResponseDTO getTeacherById(Long id) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() ->
@@ -111,6 +112,7 @@ public class TeacherService {
         return mapToResponse(teacher);
     }
 
+    @Transactional(readOnly = true)
     public List<TeacherResponseDTO> getAllTeachers() {
         return teacherRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -161,6 +163,7 @@ public class TeacherService {
         return mapToResponse(teacher);
     }
 
+    @Transactional(readOnly = true)
     public List<TeacherCourseProgressDTO> getTeacherCourseProgress(Long teacherId) {
         ensureTeacherExists(teacherId);
 
@@ -173,6 +176,7 @@ public class TeacherService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<WeeklyScheduleItemDTO> getTeacherWeeklySchedule(Long teacherId) {
         ensureTeacherExists(teacherId);
 
