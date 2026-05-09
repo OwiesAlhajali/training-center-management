@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -73,5 +74,17 @@ public class TeacherController {
     @GetMapping("/{id}/weekly-schedule")
     public ResponseEntity<List<WeeklyScheduleItemDTO>> getTeacherWeeklySchedule(@PathVariable Long id) {
         return ResponseEntity.ok(teacherService.getTeacherWeeklySchedule(id));
+    }
+
+    /**
+     * Updates teacher profile image.
+     */
+    @PutMapping("/{id}/profile-image")
+    public ResponseEntity<TeacherResponseDTO> updateProfileImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file
+    ) {
+        TeacherResponseDTO updatedTeacher = teacherService.updateProfileImage(id, file);
+        return ResponseEntity.ok(updatedTeacher);
     }
 }

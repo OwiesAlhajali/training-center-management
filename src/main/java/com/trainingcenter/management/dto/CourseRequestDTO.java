@@ -1,8 +1,6 @@
 package com.trainingcenter.management.dto;
 
 import lombok.Data;
-import java.math.BigDecimal;
-
 @Data
 public class CourseRequestDTO {
     private String name;

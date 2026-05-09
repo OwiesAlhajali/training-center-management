@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class TeacherService {
     private final TrainingSessionRepository trainingSessionRepository;
     private final LectureRepository lectureRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final ImageService imageService;
 
     @Transactional
     public TeacherResponseDTO createTeacher(TeacherRequestDTO requestDTO) {
@@ -104,6 +106,7 @@ public class TeacherService {
     }
 
 
+    @Transactional(readOnly = true)
     public TeacherResponseDTO getTeacherById(Long id) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() ->
@@ -112,6 +115,7 @@ public class TeacherService {
         return mapToResponse(teacher);
     }
 
+    @Transactional(readOnly = true)
     public List<TeacherResponseDTO> getAllTeachers() {
         return teacherRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -145,6 +149,24 @@ public class TeacherService {
         teacherRepository.delete(teacher);
     }
 
+    /**
+     * Uploads a teacher profile image and stores the Cloudinary URL in User.image.
+     */
+    @Transactional
+    public TeacherResponseDTO updateProfileImage(Long id, MultipartFile file) {
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + id));
+
+        User user = teacher.getUser();
+
+        String imageUrl = imageService.uploadImage(file);
+        user.setImage(imageUrl);
+        userRepository.save(user);
+
+        return mapToResponse(teacher);
+    }
+
+    @Transactional(readOnly = true)
     public List<TeacherCourseProgressDTO> getTeacherCourseProgress(Long teacherId) {
         ensureTeacherExists(teacherId);
 
@@ -163,6 +185,7 @@ public class TeacherService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<WeeklyScheduleItemDTO> getTeacherWeeklySchedule(Long teacherId) {
         ensureTeacherExists(teacherId);
 

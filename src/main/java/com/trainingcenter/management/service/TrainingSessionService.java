@@ -7,6 +7,7 @@ import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class TrainingSessionService {
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
     private final LectureService lectureService;
+    private final ImageService imageService;
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
@@ -40,6 +42,7 @@ public class TrainingSessionService {
     }
 
     public List<TrainingSessionResponseDTO> getSessionsWithFilters(String category,
+                                                                   String courseName,
                                                                    String instituteName,
                                                                    BigDecimal minPrice,
                                                                    BigDecimal maxPrice,
@@ -49,6 +52,7 @@ public class TrainingSessionService {
         }
 
         String normalizedCategory = normalizeText(category);
+        String normalizedCourseName = normalizeText(courseName);
         String normalizedInstituteName = normalizeText(instituteName);
         String normalizedLocation = normalizeText(location);
 
@@ -62,14 +66,18 @@ public class TrainingSessionService {
             }
         }
 
-        return sessionRepository.findWithFilters(
-                        categoryId,
-                        categoryName,
-                        normalizedInstituteName,
-                        normalizedLocation,
-                        minPrice,
-                        maxPrice
-                ).stream()
+        // Build the dynamic Specification
+        Specification<TrainingSession> spec = TrainingSessionSpecification.withFilters(
+                categoryId,
+                categoryName,
+                normalizedCourseName,
+                normalizedInstituteName,
+                normalizedLocation,
+                minPrice,
+                maxPrice
+        );
+
+        return sessionRepository.findAll(spec).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -197,6 +205,27 @@ public void deleteSession(Long id) {
     sessionRepository.delete(session);
 }
 
+@Transactional
+public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframework.web.multipart.MultipartFile file) {
+    TrainingSession session = sessionRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
+
+    String imageUrl = imageService.uploadImage(file);
+    session.setImage(imageUrl);
+    sessionRepository.save(session);
+
+    return mapToResponse(session);
+}
+
+    public List<TrainingSessionResponseDTO> searchByCourseName(String courseName) {
+        if (courseName == null || courseName.trim().isEmpty()) {
+            throw new BadRequestException("Course name cannot be empty");
+        }
+        return sessionRepository.searchByCourseName(courseName).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private String normalizeText(String value) {
         if (value == null) {
             return null;
@@ -216,9 +245,13 @@ public void deleteSession(Long id) {
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .courseName(session.getCourse().getName())
+                .courseDescription(session.getCourse().getDescription())
                 .classroomName(session.getClassRoom().getNumber())
-                .teacherName(session.getTeacher().getUser().getUsername())
+                .teacherName(session.getTeacher() != null && session.getTeacher().getUser() != null ? session.getTeacher().getUser().getUsername() : null)
+                .teacherId(session.getTeacher() != null ? session.getTeacher().getId() : null)
                 .instituteName(session.getClassRoom().getInstitute().getName())
+                .instituteId(session.getClassRoom().getInstitute() != null ? session.getClassRoom().getInstitute().getId() : null)
+                .image(session.getImage())
                 .build();
     }
 }
