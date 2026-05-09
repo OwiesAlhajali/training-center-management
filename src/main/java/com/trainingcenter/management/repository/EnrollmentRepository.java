@@ -21,6 +21,12 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId,Long courseId);
 
+    @Query("SELECT e.trainingSession.course.id, COUNT(DISTINCT e.student.id) " +
+            "FROM Enrollment e " +
+            "WHERE e.trainingSession.teacher.id = :teacherId " +
+            "GROUP BY e.trainingSession.course.id")
+    List<Object[]> countStudentsByTeacherPerCourse(@Param("teacherId") Long teacherId);
+
     @Query("""
             SELECT FUNCTION('MONTH', e.createdAt), COUNT(e)
             FROM Enrollment e

@@ -15,6 +15,7 @@ import com.trainingcenter.management.repository.LectureRepository;
 import com.trainingcenter.management.repository.TeacherRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
 import com.trainingcenter.management.repository.UserRepository;
+import com.trainingcenter.management.repository.EnrollmentRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.stream.Collectors;
@@ -36,6 +38,7 @@ public class TeacherService {
     private final PasswordEncoder passwordEncoder;
     private final TrainingSessionRepository trainingSessionRepository;
     private final LectureRepository lectureRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
     @Transactional
     public TeacherResponseDTO createTeacher(TeacherRequestDTO requestDTO) {
@@ -145,12 +148,18 @@ public class TeacherService {
     public List<TeacherCourseProgressDTO> getTeacherCourseProgress(Long teacherId) {
         ensureTeacherExists(teacherId);
 
-        return trainingSessionRepository.getTeacherCourseProgress(
-                        teacherId,
-                        SessionStatus.COMPLETED,
-                        SessionStatus.CANCELLED
-                ).stream()
-                .map(this::mapToCourseProgress)
+        List<Object[]> progressRows = trainingSessionRepository.getTeacherCourseProgress(
+                teacherId,
+                SessionStatus.COMPLETED,
+                SessionStatus.CANCELLED
+        );
+
+        // get number of students per course for this teacher
+        Map<Long, Long> studentCounts = enrollmentRepository.countStudentsByTeacherPerCourse(teacherId).stream()
+                .collect(Collectors.toMap(r -> ((Number) r[0]).longValue(), r -> ((Number) r[1]).longValue()));
+
+        return progressRows.stream()
+                .map(row -> mapToCourseProgress(row, studentCounts))
                 .toList();
     }
 
@@ -165,17 +174,21 @@ public class TeacherService {
                 .toList();
     }
 
-    private TeacherCourseProgressDTO mapToCourseProgress(Object[] row) {
+    private TeacherCourseProgressDTO mapToCourseProgress(Object[] row, Map<Long, Long> studentCounts) {
+        Long courseId = ((Number) row[0]).longValue();
         Long completed = ((Number) row[2]).longValue();
         Long total = ((Number) row[3]).longValue();
         double percentage = total == 0 ? 0.0 : Math.round(((completed * 100.0) / total) * 100.0) / 100.0;
 
+        Long students = studentCounts.getOrDefault(courseId, 0L);
+
         return TeacherCourseProgressDTO.builder()
-                .courseId((Long) row[0])
+                .courseId(courseId)
                 .courseName((String) row[1])
                 .completedSessions(completed)
                 .totalSessions(total)
                 .progressPercentage(percentage)
+                .numberOfStudents(students)
                 .build();
     }
 
@@ -199,6 +212,11 @@ public class TeacherService {
 
     private TeacherResponseDTO mapToResponse(Teacher teacher) {
         User user = teacher.getUser();
+        // compute total number of students across this teacher's courses (sum of per-course counts)
+        Long totalStudents = enrollmentRepository.countStudentsByTeacherPerCourse(teacher.getId()).stream()
+                .mapToLong(r -> ((Number) r[1]).longValue())
+                .sum();
+
         return TeacherResponseDTO.builder()
                 .id(teacher.getId())
                 .userId(user.getId())
@@ -213,6 +231,7 @@ public class TeacherService {
                 .address(teacher.getAddress())
                 .cv(teacher.getCv())
                 .experienceYears(teacher.getExperienceYears())
+                .numberOfStudents(totalStudents)
                 .build();
     }
 }
