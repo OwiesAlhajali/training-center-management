@@ -11,14 +11,15 @@ import java.util.List;
 public class InstituteResponseDTO {
     private Long id;
     private String name;
-    private String workingHours;
+    private String workingHours; // formatted: "HH:mm - HH:mm"
     private String description;
     private String location;
     private String phoneNumber;
     private String email;
     private List<String> workingDays;
     private InstituteStatus status;
+    private Long userId;
     private String ownerName; //from User
-    // email and contactInfo intentionally omitted (sensitive / moved to User responses)
+    private Long tenantId;
     private String tenantName; // from Tenant
 }

@@ -158,7 +158,9 @@ public class InstituteService {
                 .email(institute.getEmail())
                 .workingDays(institute.getWorkingDays())
                 .status(institute.getStatus())
+                .userId(institute.getUser() != null ? institute.getUser().getId() : null)
                 .ownerName(institute.getUser() != null ? institute.getUser().getUsername() : "No Owner")
+                .tenantId(institute.getTenant() != null ? institute.getTenant().getId() : null)
                 .tenantName(institute.getTenant() != null ? institute.getTenant().getName() : "No Tenant")
                 .build();
     }
