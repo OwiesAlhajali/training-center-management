@@ -18,8 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.time.Year;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InstituteService {
 
-    private static final DateTimeFormatter RESPONSE_TIME_FORMAT = DateTimeFormatter.ofPattern("hh:mm a");
+    
 
     private final InstituteRepository instituteRepository;
     private final UserRepository userRepository;
@@ -43,17 +41,17 @@ public class InstituteService {
         Tenant tenant = tenantRepository.findById(requestDTO.getTenantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + requestDTO.getTenantId()));
 
-        LocalTime[] workingHours = parseWorkingHours(requestDTO.getWorkingHours());
+        validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
 
         Institute institute = Institute.builder()
             .name(requestDTO.getName())
             .description(requestDTO.getDescription())
-            .address(requestDTO.getLocation())
+            .location(requestDTO.getLocation())
             .phoneNumber(requestDTO.getPhoneNumber())
             .email(requestDTO.getEmail())
             .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
-            .startTime(workingHours[0])
-            .endTime(workingHours[1])
+            .startTime(requestDTO.getStartTime())
+            .endTime(requestDTO.getEndTime())
             .status(requestDTO.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : requestDTO.getStatus())
             .user(user)
             .tenant(tenant)
@@ -99,16 +97,16 @@ public class InstituteService {
         Tenant tenant = tenantRepository.findById(requestDTO.getTenantId())
             .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + requestDTO.getTenantId()));
 
-        LocalTime[] workingHours = parseWorkingHours(requestDTO.getWorkingHours());
+        validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
 
         existing.setName(requestDTO.getName());
         existing.setDescription(requestDTO.getDescription());
-        existing.setAddress(requestDTO.getLocation());
+        existing.setLocation(requestDTO.getLocation());
         existing.setPhoneNumber(requestDTO.getPhoneNumber());
         existing.setEmail(requestDTO.getEmail());
         existing.setWorkingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays());
-        existing.setStartTime(workingHours[0]);
-        existing.setEndTime(workingHours[1]);
+        existing.setStartTime(requestDTO.getStartTime());
+        existing.setEndTime(requestDTO.getEndTime());
         existing.setStatus(requestDTO.getStatus() == null ? existing.getStatus() : requestDTO.getStatus());
         existing.setUser(user);
         existing.setTenant(tenant);
@@ -149,56 +147,27 @@ public class InstituteService {
         return InstituteResponseDTO.builder()
                 .id(institute.getId())
                 .name(institute.getName())
-                .workingHours((institute.getStartTime() != null && institute.getEndTime() != null)
-                    ? RESPONSE_TIME_FORMAT.format(institute.getStartTime()) + " - " + RESPONSE_TIME_FORMAT.format(institute.getEndTime())
-                    : null)
+                .startTime(institute.getStartTime())
+                .endTime(institute.getEndTime())
                 .description(institute.getDescription())
-                .location(institute.getAddress())
+                .location(institute.getLocation())
                 .phoneNumber(institute.getPhoneNumber())
                 .email(institute.getEmail())
                 .workingDays(institute.getWorkingDays())
                 .status(institute.getStatus())
+                .userId(institute.getUser() != null ? institute.getUser().getId() : null)
                 .ownerName(institute.getUser() != null ? institute.getUser().getUsername() : "No Owner")
+                .tenantId(institute.getTenant() != null ? institute.getTenant().getId() : null)
                 .tenantName(institute.getTenant() != null ? institute.getTenant().getName() : "No Tenant")
                 .build();
     }
 
-    private LocalTime[] parseWorkingHours(String workingHours) {
-        if (workingHours == null || workingHours.isBlank()) {
-            throw new BadRequestException("Working hours are required and must follow format HH:mm - HH:mm or hh:mm AM - hh:mm PM");
+    private void validateWorkingHours(LocalTime startTime, LocalTime endTime) {
+        if (startTime == null || endTime == null) {
+            throw new BadRequestException("Start time and end time are required");
         }
-
-        String[] parts = workingHours.trim().split("\\s*-\\s*");
-        if (parts.length != 2) {
-            throw new BadRequestException("Invalid working hours format. Expected: HH:mm - HH:mm or hh:mm AM - hh:mm PM");
-        }
-
-        LocalTime start = parseTime(parts[0].trim());
-        LocalTime end = parseTime(parts[1].trim());
-
-        if (!end.isAfter(start)) {
+        if (!endTime.isAfter(startTime)) {
             throw new BadRequestException("End time must be after start time");
         }
-
-        return new LocalTime[]{start, end};
-    }
-
-    private LocalTime parseTime(String value) {
-        List<DateTimeFormatter> acceptedFormats = List.of(
-                DateTimeFormatter.ofPattern("HH:mm"),
-                DateTimeFormatter.ofPattern("H:mm"),
-                DateTimeFormatter.ofPattern("hh:mm a"),
-                DateTimeFormatter.ofPattern("h:mm a")
-        );
-
-        for (DateTimeFormatter formatter : acceptedFormats) {
-            try {
-                return LocalTime.parse(value.toUpperCase(), formatter);
-            } catch (DateTimeParseException ignored) {
-                // Try next accepted pattern.
-            }
-        }
-
-        throw new BadRequestException("Invalid time value: " + value + ". Accepted formats: HH:mm or hh:mm AM/PM");
     }
 }

@@ -4,6 +4,7 @@ import com.trainingcenter.management.entity.InstituteStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -11,14 +12,16 @@ import java.util.List;
 public class InstituteResponseDTO {
     private Long id;
     private String name;
-    private String workingHours;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private String description;
     private String location;
     private String phoneNumber;
     private String email;
     private List<String> workingDays;
     private InstituteStatus status;
+    private Long userId;
     private String ownerName; //from User
-    // email and contactInfo intentionally omitted (sensitive / moved to User responses)
+    private Long tenantId;
     private String tenantName; // from Tenant
 }
