@@ -4,6 +4,7 @@ import com.trainingcenter.management.entity.InstituteStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -11,9 +12,10 @@ import java.util.List;
 public class InstituteResponseDTO {
     private Long id;
     private String name;
-    private String workingHours; // formatted: "HH:mm - HH:mm"
+    private LocalTime startTime;
+    private LocalTime endTime;
     private String description;
-    private String location;
+    private String address;
     private String phoneNumber;
     private String email;
     private List<String> workingDays;
