@@ -56,6 +56,7 @@ public class Institute {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private InstituteStatus status = InstituteStatus.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -70,5 +71,13 @@ public class Institute {
     private boolean isValidTimeRange() {
         if (startTime == null || endTime == null) return true;
         return endTime.isAfter(startTime);
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void normalizeStatus() {
+        if (status == null) {
+            status = InstituteStatus.ACTIVE;
+        }
     }
 }

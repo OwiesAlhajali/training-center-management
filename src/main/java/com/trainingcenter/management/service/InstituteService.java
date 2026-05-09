@@ -107,7 +107,7 @@ public class InstituteService {
         existing.setWorkingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays());
         existing.setStartTime(requestDTO.getStartTime());
         existing.setEndTime(requestDTO.getEndTime());
-        existing.setStatus(requestDTO.getStatus() == null ? existing.getStatus() : requestDTO.getStatus());
+        existing.setStatus(requestDTO.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : requestDTO.getStatus());
         existing.setUser(user);
         existing.setTenant(tenant);
 
@@ -154,7 +154,7 @@ public class InstituteService {
                 .phoneNumber(institute.getPhoneNumber())
                 .email(institute.getEmail())
                 .workingDays(institute.getWorkingDays())
-                .status(institute.getStatus())
+                .status(institute.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : institute.getStatus())
                 .userId(institute.getUser() != null ? institute.getUser().getId() : null)
                 .ownerName(institute.getUser() != null ? institute.getUser().getUsername() : "No Owner")
                 .tenantId(institute.getTenant() != null ? institute.getTenant().getId() : null)
