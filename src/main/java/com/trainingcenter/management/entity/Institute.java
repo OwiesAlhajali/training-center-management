@@ -28,9 +28,9 @@ public class Institute {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @NotBlank(message = "Address is required")
-    @Column(nullable = false)
-    private String address;
+    @NotBlank(message = "Location is required")
+    @Column(name = "address", nullable = false)
+    private String location;
 
     @Pattern(regexp = "^\\+?[0-9 .-]{7,20}$", message = "Invalid phone number format")
     @Column(name = "phone_number")

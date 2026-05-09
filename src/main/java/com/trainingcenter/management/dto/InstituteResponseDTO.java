@@ -15,7 +15,7 @@ public class InstituteResponseDTO {
     private LocalTime startTime;
     private LocalTime endTime;
     private String description;
-    private String address;
+    private String location;
     private String phoneNumber;
     private String email;
     private List<String> workingDays;

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -18,11 +19,14 @@ public class InstituteRequestDTO {
     @NotBlank(message = "Institute name is required")
     private String name;
 
-    @NotBlank(message = "Working hours are required")
-    private String workingHours;
+    @NotNull(message = "Start time is required")
+    private LocalTime startTime;
+
+    @NotNull(message = "End time is required")
+    private LocalTime endTime;
 
     private String description;
-    private String address;
+    private String location;
     private String phoneNumber;
     private String email;
     private List<String> workingDays;
