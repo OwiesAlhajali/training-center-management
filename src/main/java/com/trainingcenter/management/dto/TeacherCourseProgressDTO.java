@@ -13,5 +13,7 @@ public class TeacherCourseProgressDTO {
     private Long completedSessions;
     private Long totalSessions;
     private Double progressPercentage;
+    // number of students in this course for the teacher (counts per-course, not unique across multiple courses)
+    private Long numberOfStudents;
 }
 

@@ -6,6 +6,7 @@ import com.trainingcenter.management.dto.MonthlyRegistrationStatDTO;
 import com.trainingcenter.management.entity.Institute;
 import com.trainingcenter.management.entity.Tenant;
 import com.trainingcenter.management.entity.User;
+import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.InstituteRepository;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.time.Year;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +26,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class InstituteService {
+
+    
 
     private final InstituteRepository instituteRepository;
     private final UserRepository userRepository;
@@ -37,14 +41,21 @@ public class InstituteService {
         Tenant tenant = tenantRepository.findById(requestDTO.getTenantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + requestDTO.getTenantId()));
 
+        validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
+
         Institute institute = Institute.builder()
-	 	.name(requestDTO.getName())
-                .workingHours(requestDTO.getWorkingHours())
-                .description(requestDTO.getDescription())
-                .location(requestDTO.getLocation())
-                .user(user)
-                .tenant(tenant)
-                .build();
+            .name(requestDTO.getName())
+            .description(requestDTO.getDescription())
+            .location(requestDTO.getLocation())
+            .phoneNumber(requestDTO.getPhoneNumber())
+            .email(requestDTO.getEmail())
+            .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
+            .startTime(requestDTO.getStartTime())
+            .endTime(requestDTO.getEndTime())
+            .status(requestDTO.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : requestDTO.getStatus())
+            .user(user)
+            .tenant(tenant)
+            .build();
 
         return mapToResponse(instituteRepository.save(institute));
     }
@@ -80,10 +91,25 @@ public class InstituteService {
         Institute existing = instituteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Institute not found with ID: " + id));
 
-	existing.setName(requestDTO.getName());
-        existing.setWorkingHours(requestDTO.getWorkingHours());
+        User user = userRepository.findById(requestDTO.getUserId())
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + requestDTO.getUserId()));
+
+        Tenant tenant = tenantRepository.findById(requestDTO.getTenantId())
+            .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + requestDTO.getTenantId()));
+
+        validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
+
+        existing.setName(requestDTO.getName());
         existing.setDescription(requestDTO.getDescription());
         existing.setLocation(requestDTO.getLocation());
+        existing.setPhoneNumber(requestDTO.getPhoneNumber());
+        existing.setEmail(requestDTO.getEmail());
+        existing.setWorkingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays());
+        existing.setStartTime(requestDTO.getStartTime());
+        existing.setEndTime(requestDTO.getEndTime());
+        existing.setStatus(requestDTO.getStatus() == null ? existing.getStatus() : requestDTO.getStatus());
+        existing.setUser(user);
+        existing.setTenant(tenant);
 
         return mapToResponse(instituteRepository.save(existing));
     }
@@ -120,14 +146,28 @@ public class InstituteService {
     private InstituteResponseDTO mapToResponse(Institute institute) {
         return InstituteResponseDTO.builder()
                 .id(institute.getId())
-		.name(institute.getName())
-                .workingHours(institute.getWorkingHours())
+                .name(institute.getName())
+                .startTime(institute.getStartTime())
+                .endTime(institute.getEndTime())
                 .description(institute.getDescription())
                 .location(institute.getLocation())
+                .phoneNumber(institute.getPhoneNumber())
+                .email(institute.getEmail())
+                .workingDays(institute.getWorkingDays())
+                .status(institute.getStatus())
+                .userId(institute.getUser() != null ? institute.getUser().getId() : null)
                 .ownerName(institute.getUser() != null ? institute.getUser().getUsername() : "No Owner")
-                .email(institute.getUser() != null ? institute.getUser().getEmail() : null)
-                .contactInfo(institute.getUser() != null ? institute.getUser().getContactInfo() : null)
+                .tenantId(institute.getTenant() != null ? institute.getTenant().getId() : null)
                 .tenantName(institute.getTenant() != null ? institute.getTenant().getName() : "No Tenant")
                 .build();
+    }
+
+    private void validateWorkingHours(LocalTime startTime, LocalTime endTime) {
+        if (startTime == null || endTime == null) {
+            throw new BadRequestException("Start time and end time are required");
+        }
+        if (!endTime.isAfter(startTime)) {
+            throw new BadRequestException("End time must be after start time");
+        }
     }
 }

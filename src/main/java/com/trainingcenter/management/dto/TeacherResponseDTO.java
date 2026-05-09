@@ -31,4 +31,6 @@ public class TeacherResponseDTO {
     private String email;
     private String contactInfo;
     private String image;
+    // total number of students across the teacher's courses (sum of per-course counts)
+    private Long numberOfStudents;
 }
