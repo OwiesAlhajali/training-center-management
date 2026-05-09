@@ -48,7 +48,7 @@ public class InstituteService {
         Institute institute = Institute.builder()
             .name(requestDTO.getName())
             .description(requestDTO.getDescription())
-            .address(requestDTO.getLocation())
+            .address(requestDTO.getAddress())
             .phoneNumber(requestDTO.getPhoneNumber())
             .email(requestDTO.getEmail())
             .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
@@ -103,7 +103,7 @@ public class InstituteService {
 
         existing.setName(requestDTO.getName());
         existing.setDescription(requestDTO.getDescription());
-        existing.setAddress(requestDTO.getLocation());
+        existing.setAddress(requestDTO.getAddress());
         existing.setPhoneNumber(requestDTO.getPhoneNumber());
         existing.setEmail(requestDTO.getEmail());
         existing.setWorkingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays());

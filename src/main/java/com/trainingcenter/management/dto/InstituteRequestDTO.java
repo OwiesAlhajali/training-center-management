@@ -22,7 +22,7 @@ public class InstituteRequestDTO {
     private String workingHours;
 
     private String description;
-    private String location;
+    private String address;
     private String phoneNumber;
     private String email;
     private List<String> workingDays;
