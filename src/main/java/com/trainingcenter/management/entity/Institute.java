@@ -29,7 +29,7 @@ public class Institute {
     private String description;
 
     @NotBlank(message = "Location is required")
-    @Column(name = "address", nullable = false)
+    @Column(name = "location", nullable = false)
     private String location;
 
     @Pattern(regexp = "^\\+?[0-9 .-]{7,20}$", message = "Invalid phone number format")
