@@ -6,6 +6,7 @@ import com.trainingcenter.management.exception.ScheduleConflictException;
 import com.trainingcenter.management.dto.ConflictResponseDTO;
 import com.trainingcenter.management.dto.AvailableOptionDTO;
 import com.trainingcenter.management.entity.ClassRoom;
+import com.trainingcenter.management.entity.Institute;
 import com.trainingcenter.management.entity.Lecture;
 import com.trainingcenter.management.entity.Teacher;
 import com.trainingcenter.management.entity.TrainingSession;
@@ -70,6 +71,9 @@ public class LectureService {
     @Transactional
     public void generateAutoLectures(TrainingSession session, LocalDate startDate, 
                                     LocalTime startTime, LocalTime endTime, List<String> days) {
+        ClassRoom classRoom = classRoomRepository.findById(session.getClassRoom().getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Classroom not found"));
+        validateWithinInstituteHours(classRoom, startTime, endTime);
         
         List<DayOfWeek> selectedDays = days.stream()
                 .map(String::toUpperCase)
@@ -89,7 +93,7 @@ public class LectureService {
                 
         
                 boolean isRoomBusy = lectureRepository.existsConflict(
-                        session.getClassRoom().getId(), currentDate, startTime, endTime);
+                    classRoom.getId(), currentDate, startTime, endTime);
                 boolean isTeacherBusy = lectureRepository.isTeacherBusy(
                         session.getTeacher().getId(), currentDate, startTime, endTime);
 
@@ -102,7 +106,7 @@ public class LectureService {
                             .startTime(startTime)
                             .endTime(endTime)
                             .trainingSession(session)
-                            .classRoom(session.getClassRoom())
+                            .classRoom(classRoom)
                             .teacher(session.getTeacher())
                             .build();
                     pendingLectures.add(lecture);
@@ -140,11 +144,13 @@ public class LectureService {
         TrainingSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
 
+        ClassRoom room = classRoomRepository.findById(request.getClassroomId())
+            .orElseThrow(() -> new ResourceNotFoundException("Classroom not found"));
+        validateWithinInstituteHours(room, request.getStartTime(), request.getEndTime());
+
         validateConflicts(request.getClassroomId(), request.getTeacherId(), 
                          request.getLectureDate(), request.getStartTime(), request.getEndTime());
 
-        ClassRoom room = classRoomRepository.findById(request.getClassroomId())
-                .orElseThrow(() -> new ResourceNotFoundException("Classroom not found"));
         Teacher teacher = teacherRepository.findById(request.getTeacherId())
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
 
@@ -171,8 +177,9 @@ public class LectureService {
     List<AvailableOptionDTO> suggestions = new ArrayList<>();
     int MAX_ALLOWED = 3; 
 
-    LocalTime openingTime = LocalTime.of(8, 0);
-    LocalTime closingTime = LocalTime.of(22, 0);
+    Institute institute = session.getClassRoom().getInstitute();
+    LocalTime openingTime = institute.getStartTime();
+    LocalTime closingTime = institute.getEndTime();
     long durationMinutes = java.time.Duration.between(originalStart, originalEnd).toMinutes();
     LocalDate referenceDate = (conflictDates != null && !conflictDates.isEmpty()) ? conflictDates.get(0) : LocalDate.now();
 
@@ -270,6 +277,10 @@ public class LectureService {
         Lecture existingLecture = lectureRepository.findById(lectureId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lecture not found"));
 
+        ClassRoom room = classRoomRepository.findById(request.getClassroomId())
+            .orElseThrow(() -> new ResourceNotFoundException("Classroom not found"));
+        validateWithinInstituteHours(room, request.getStartTime(), request.getEndTime());
+
         validateConflicts(request.getClassroomId(), request.getTeacherId(), 
                          request.getLectureDate(), request.getStartTime(), request.getEndTime());
 
@@ -277,8 +288,7 @@ public class LectureService {
         existingLecture.setStartTime(request.getStartTime());
         existingLecture.setEndTime(request.getEndTime());
         
-        existingLecture.setClassRoom(classRoomRepository.findById(request.getClassroomId())
-                .orElseThrow(() -> new ResourceNotFoundException("Classroom not found")));
+        existingLecture.setClassRoom(room);
         existingLecture.setTeacher(teacherRepository.findById(request.getTeacherId())
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher not found")));
 
@@ -307,6 +317,32 @@ public class LectureService {
         }
         if (lectureRepository.isTeacherBusy(teacherId, date, start, end)) {
             throw new BadRequestException("Conflict: Teacher is busy on " + date);
+        }
+    }
+
+    private void validateWithinInstituteHours(ClassRoom classRoom, LocalTime start, LocalTime end) {
+        if (start == null || end == null) {
+            throw new BadRequestException("Lecture start and end times are required");
+        }
+
+        if (!end.isAfter(start)) {
+            throw new BadRequestException("Lecture end time must be after start time");
+        }
+
+        Institute institute = classRoom.getInstitute();
+        if (institute == null) {
+            throw new ResourceNotFoundException("Institute not found for classroom ID: " + classRoom.getId());
+        }
+
+        LocalTime instituteStart = institute.getStartTime();
+        LocalTime instituteEnd = institute.getEndTime();
+        if (instituteStart == null || instituteEnd == null) {
+            throw new BadRequestException("Institute working hours are not configured for classroom ID: " + classRoom.getId());
+        }
+
+        if (start.isBefore(instituteStart) || end.isAfter(instituteEnd)) {
+            throw new BadRequestException("Lecture time must be within institute working hours: "
+                    + instituteStart + " - " + instituteEnd);
         }
     }
 
