@@ -22,10 +22,10 @@ public class Institute {
     private Long id;
 
     @NotBlank(message = "Institute name is required")
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @NotBlank(message = "Location is required")
@@ -37,12 +37,15 @@ public class Institute {
     private String phoneNumber;
 
     @Email(message = "Invalid email format")
-    @Column
+    @Column(name = "email")
     private String email;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "institute_working_days", joinColumns = @JoinColumn(name = "institute_id"))
-    @Column(name = "working_day")
+    @CollectionTable(
+            name = "institute_working_days",
+            joinColumns = @JoinColumn(name = "institute_id", foreignKey = @ForeignKey(name = "fk_institute_working_days_institute"))
+    )
+    @Column(name = "working_day", nullable = false)
     private List<@NotBlank String> workingDays = new ArrayList<>();
 
     @NotNull(message = "Start time is required")
@@ -55,16 +58,16 @@ public class Institute {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     @Builder.Default
     private InstituteStatus status = InstituteStatus.ACTIVE;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_institute_user"))
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id")
+    @JoinColumn(name = "tenant_id", nullable = false, foreignKey = @ForeignKey(name = "fk_institute_tenant"))
     private Tenant tenant;
 
     @AssertTrue(message = "End time must be after start time")

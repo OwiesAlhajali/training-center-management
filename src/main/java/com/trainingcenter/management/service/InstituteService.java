@@ -34,6 +34,7 @@ public class InstituteService {
     private final TenantRepository tenantRepository;
     private final EnrollmentRepository enrollmentRepository;
 
+    @Transactional
     public InstituteResponseDTO createInstitute(InstituteRequestDTO requestDTO) {
         User user = userRepository.findById(requestDTO.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + requestDTO.getUserId()));
@@ -87,6 +88,7 @@ public class InstituteService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public InstituteResponseDTO updateInstitute(Long id, InstituteRequestDTO requestDTO) {
         Institute existing = instituteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Institute not found with ID: " + id));

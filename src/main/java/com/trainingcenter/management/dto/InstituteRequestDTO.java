@@ -1,5 +1,6 @@
 package com.trainingcenter.management.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.trainingcenter.management.entity.InstituteStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,16 +20,23 @@ public class InstituteRequestDTO {
     @NotBlank(message = "Institute name is required")
     private String name;
 
+    @NotBlank(message = "Location is required")
+    private String location;
+
+    private String description;
+
+    private String phoneNumber;
+
+    private String email;
+
     @NotNull(message = "Start time is required")
+    @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime startTime;
 
     @NotNull(message = "End time is required")
+    @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime endTime;
 
-    private String description;
-    private String location;
-    private String phoneNumber;
-    private String email;
     private List<String> workingDays;
     private InstituteStatus status;
 }
