@@ -2,6 +2,7 @@ package com.trainingcenter.management.service;
 
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.checkout.Session;
 import com.trainingcenter.management.entity.*;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.PaymentRepository;
@@ -32,18 +33,56 @@ public class WebhookService {
         }
 
         String paymentIntentId = paymentIntent.getId();
-
-        // Find Payment by stripePaymentIntentId
         Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId).orElse(null);
-        if (payment == null) {
-            logger.warn("Payment not found for PaymentIntent ID: {}", paymentIntentId);
+        processSuccessfulPayment(payment, "PaymentIntent", paymentIntentId);
+    }
+
+    @Transactional
+    public void handlePaymentIntentFailed(Event event) {
+        // Extract PaymentIntent from event
+        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (paymentIntent == null) {
             return;
         }
 
+        String paymentIntentId = paymentIntent.getId();
+        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId).orElse(null);
+        processFailedPayment(payment, "PaymentIntent", paymentIntentId);
+    }
+
+    @Transactional
+    public void handleCheckoutSessionCompleted(Event event) {
+        Session checkoutSession = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (checkoutSession == null) {
+            return;
+        }
+
+        String sessionId = checkoutSession.getId();
+        Payment payment = paymentRepository.findByStripePaymentIntentId(sessionId).orElse(null);
+        processSuccessfulPayment(payment, "Checkout Session", sessionId);
+    }
+
+    @Transactional
+    public void handleCheckoutSessionExpired(Event event) {
+        Session checkoutSession = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (checkoutSession == null) {
+            return;
+        }
+
+        String sessionId = checkoutSession.getId();
+        Payment payment = paymentRepository.findByStripePaymentIntentId(sessionId).orElse(null);
+        processFailedPayment(payment, "Checkout Session", sessionId);
+    }
+
+    private void processSuccessfulPayment(Payment payment, String paymentType, String externalId) {
+        if (payment == null) {
+            logger.warn("Payment not found for {} ID: {}", paymentType, externalId);
+            return;
+        }
 
         // Check if already succeeded (idempotency)
         if (payment.getStatus() == PaymentStatus.SUCCEEDED || payment.getStatus() == PaymentStatus.FAILED) {
-            logger.info("Payment already processed for PaymentIntent ID: {}", paymentIntentId);
+            logger.info("Payment already processed for {} ID: {}", paymentType, externalId);
             return;
         }
 
@@ -87,26 +126,15 @@ public class WebhookService {
         }
     }
 
-    @Transactional
-    public void handlePaymentIntentFailed(Event event) {
-        // Extract PaymentIntent from event
-        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (paymentIntent == null) {
-            return;
-        }
-
-        String paymentIntentId = paymentIntent.getId();
-
-        // Find Payment by stripePaymentIntentId
-        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId).orElse(null);
+    private void processFailedPayment(Payment payment, String paymentType, String externalId) {
         if (payment == null) {
-            logger.warn("Payment not found for PaymentIntent ID: {}", paymentIntentId);
+            logger.warn("Payment not found for {} ID: {}", paymentType, externalId);
             return;
         }
 
         // Check if already processed
         if (payment.getStatus() == PaymentStatus.SUCCEEDED || payment.getStatus() == PaymentStatus.FAILED) {
-            logger.info("Payment already processed for PaymentIntent ID: {}", paymentIntentId);
+            logger.info("Payment already processed for {} ID: {}", paymentType, externalId);
             return;
         }
 
@@ -114,6 +142,6 @@ public class WebhookService {
         payment.setStatus(PaymentStatus.FAILED);
         paymentRepository.save(payment);
 
-        logger.info("Payment failed for PaymentIntent ID: {}", paymentIntentId);
+        logger.info("Payment failed for {} ID: {}", paymentType, externalId);
     }
 }
