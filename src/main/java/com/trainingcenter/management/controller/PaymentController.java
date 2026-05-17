@@ -14,8 +14,11 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/initiate/{sessionId}")
-    public ResponseEntity<String> initiatePayment(@PathVariable Long sessionId) throws StripeException {
-        String clientSecret = paymentService.initiatePayment(sessionId);
+    public ResponseEntity<String> initiatePayment(
+            @PathVariable Long sessionId,
+            @RequestParam("studentId") Long studentId
+    ) throws StripeException {
+        String clientSecret = paymentService.initiatePayment(sessionId, studentId);
         return ResponseEntity.ok(clientSecret);
     }
 }
