@@ -9,11 +9,8 @@ import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.PaymentRepository;
 import com.trainingcenter.management.repository.StudentRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
-import com.trainingcenter.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,25 +23,19 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
     private final TrainingSessionRepository trainingSessionRepository;
-    private final UserRepository userRepository;
 
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
 
     @Transactional
-    public String initiatePayment(Long sessionId) throws StripeException {
-        // Get current authenticated user's email from security context
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = authentication.getName();
-
-        User user = userRepository.findByEmail(userEmail)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found for email: " + userEmail));
-
-        // Get student
-        Student student = studentRepository.findByUser(user);
-        if (student == null) {
-            throw new ResourceNotFoundException("Student not found for user");
+    public String initiatePayment(Long sessionId, Long studentId) throws StripeException {
+        if (studentId == null) {
+            throw new ResourceNotFoundException("Student not found");
         }
+
+        // Get student directly
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
 
         // Fetch training session
         TrainingSession session = trainingSessionRepository.findById(sessionId)
