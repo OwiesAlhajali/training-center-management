@@ -53,6 +53,12 @@ public class WebhookController {
             } else if ("payment_intent.payment_failed".equals(event.getType())) {
                 log.info("Processing payment_intent.payment_failed event: {}", event.getId());
                 webhookService.handlePaymentIntentFailed(event);
+            } else if ("checkout.session.completed".equals(event.getType())) {
+                log.info("Processing checkout.session.completed event: {}", event.getId());
+                webhookService.handleCheckoutSessionCompleted(event);
+            } else if ("checkout.session.expired".equals(event.getType())) {
+                log.info("Processing checkout.session.expired event: {}", event.getId());
+                webhookService.handleCheckoutSessionExpired(event);
             }
         } catch (Exception e) {
             log.error("Error processing webhook event: {}", e.getMessage(), e);
