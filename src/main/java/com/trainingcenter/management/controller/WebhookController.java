@@ -3,6 +3,7 @@ package com.trainingcenter.management.controller;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
+import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.service.WebhookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class WebhookController {
     @PostMapping
     public ResponseEntity<?> handleWebhook(
             @RequestBody String payload,
-            @RequestHeader("Stripe-Signature") String sigHeader) {
+            @RequestHeader(value = "Stripe-Signature", required = false) String sigHeader) {
 
         if (sigHeader == null || payload == null) {
             log.warn("Missing Stripe signature or payload");
@@ -36,30 +37,25 @@ public class WebhookController {
         try {
             // Verify Stripe signature
             event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+        } catch (SignatureVerificationException e) {
+            log.error("Signature verification failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
-            if (e instanceof SignatureVerificationException) {
-                log.error("Signature verification failed: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
             log.error("Invalid JSON or error parsing webhook payload: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
 
         // Handle specific event types
         try {
-            if ("payment_intent.succeeded".equals(event.getType())) {
-                log.info("Processing payment_intent.succeeded event: {}", event.getId());
-                webhookService.handlePaymentIntentSucceeded(event);
-            } else if ("payment_intent.payment_failed".equals(event.getType())) {
-                log.info("Processing payment_intent.payment_failed event: {}", event.getId());
-                webhookService.handlePaymentIntentFailed(event);
-            } else if ("checkout.session.completed".equals(event.getType())) {
+            if ("checkout.session.completed".equals(event.getType())) {
                 log.info("Processing checkout.session.completed event: {}", event.getId());
                 webhookService.handleCheckoutSessionCompleted(event);
-            } else if ("checkout.session.expired".equals(event.getType())) {
-                log.info("Processing checkout.session.expired event: {}", event.getId());
-                webhookService.handleCheckoutSessionExpired(event);
+            } else {
+                log.info("Ignoring unsupported Stripe event type: {}", event.getType());
             }
+        } catch (BadRequestException e) {
+            log.warn("Invalid Stripe webhook payload: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             log.error("Error processing webhook event: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

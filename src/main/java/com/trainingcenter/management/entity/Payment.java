@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "payments")
+@Table(
+        name = "payments",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"student_id", "training_session_id"})
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,8 +29,8 @@ public class Payment {
     @JoinColumn(name = "training_session_id", nullable = false)
     private TrainingSession trainingSession;
 
-    @Column(name = "stripe_payment_intent_id", nullable = false)
-    private String stripePaymentIntentId;
+    @Column(name = "stripe_checkout_session_id", nullable = false, unique = true)
+    private String stripeCheckoutSessionId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
