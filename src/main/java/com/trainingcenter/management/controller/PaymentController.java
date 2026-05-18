@@ -18,7 +18,7 @@ public class PaymentController {
             @PathVariable Long sessionId,
             @RequestParam("studentId") Long studentId
     ) throws StripeException {
-        String clientSecret = paymentService.initiatePayment(sessionId, studentId);
-        return ResponseEntity.ok(clientSecret);
+        String checkoutUrl = paymentService.initiatePayment(sessionId, studentId);
+        return ResponseEntity.ok(checkoutUrl);
     }
 }
