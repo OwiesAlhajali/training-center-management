@@ -1,7 +1,13 @@
 package com.trainingcenter.management.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.stripe.exception.EventDataObjectDeserializationException;
 import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.checkout.Session;
+import com.stripe.model.StripeObject;
 import com.trainingcenter.management.entity.*;
 import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.repository.EnrollmentRepository;
@@ -14,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -23,25 +30,23 @@ public class WebhookService {
     private final PaymentRepository paymentRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final TrainingSessionRepository trainingSessionRepository;
+    private final ObjectMapper objectMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(WebhookService.class);
 
     @Transactional
     public void handleCheckoutSessionCompleted(Event event) {
-        Session checkoutSession = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (checkoutSession == null) {
-            throw new BadRequestException("Unable to deserialize checkout session");
-        }
+        CheckoutSessionDetails checkoutSession = resolveCheckoutSession(event);
 
-        String checkoutSessionId = checkoutSession.getId();
-        Payment payment = paymentRepository.findByStripeCheckoutSessionId(checkoutSessionId).orElse(null);
+        Payment payment = paymentRepository.findByStripeCheckoutSessionId(checkoutSession.sessionId())
+                .orElse(null);
         if (payment == null) {
-            logger.warn("Payment not found for checkout session {}", checkoutSessionId);
+            logger.warn("Payment not found for checkout session {}", checkoutSession.sessionId());
             return;
         }
 
         if (payment.getStatus() != PaymentStatus.PENDING) {
-            logger.info("Payment already processed for checkout session {} with status {}", checkoutSessionId, payment.getStatus());
+            logger.info("Payment already processed for checkout session {} with status {}", checkoutSession.sessionId(), payment.getStatus());
             return;
         }
 
@@ -84,11 +89,52 @@ public class WebhookService {
             throw ex;
         }
 
-        logger.info("Payment succeeded and enrollment created for checkout session {}", checkoutSessionId);
+        logger.info("Payment succeeded and enrollment created for checkout session {}", checkoutSession.sessionId());
     }
 
-    private void validateCheckoutMetadata(Session checkoutSession, Payment payment) {
-        Map<String, String> metadata = checkoutSession.getMetadata();
+    private CheckoutSessionDetails resolveCheckoutSession(Event event) {
+        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+
+        if (deserializer.getObject().isPresent()) {
+            StripeObject stripeObject = deserializer.getObject().get();
+            if (stripeObject instanceof Session session) {
+                return CheckoutSessionDetails.fromSession(session);
+            }
+        }
+
+        try {
+            StripeObject stripeObject = deserializer.deserializeUnsafe();
+            if (stripeObject instanceof Session session) {
+                logger.info("Resolved checkout session {} using Stripe unsafe deserialization for event {}", session.getId(), event.getId());
+                return CheckoutSessionDetails.fromSession(session);
+            }
+        } catch (EventDataObjectDeserializationException ex) {
+            logger.warn("Stripe SDK could not deserialize checkout session for event {}: {}", event.getId(), ex.getMessage());
+        }
+
+        String rawJson = deserializer.getRawJson();
+        if (rawJson == null || rawJson.isBlank()) {
+            throw new BadRequestException("Unable to deserialize checkout session");
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(rawJson);
+            JsonNode idNode = root.path("id");
+            String sessionId = idNode.isMissingNode() || idNode.isNull() ? null : idNode.asText();
+            if (sessionId == null || sessionId.isBlank()) {
+                throw new BadRequestException("Unable to deserialize checkout session");
+            }
+
+            Map<String, String> metadata = extractMetadata(root.path("metadata"));
+            logger.info("Resolved checkout session {} from raw webhook payload for event {}", sessionId, event.getId());
+            return new CheckoutSessionDetails(sessionId, metadata);
+        } catch (Exception ex) {
+            throw new BadRequestException("Unable to deserialize checkout session");
+        }
+    }
+
+    private void validateCheckoutMetadata(CheckoutSessionDetails checkoutSession, Payment payment) {
+        Map<String, String> metadata = checkoutSession.metadata();
         if (metadata == null) {
             throw new BadRequestException("Checkout session metadata is missing");
         }
@@ -111,6 +157,23 @@ public class WebhookService {
             return Long.parseLong(value);
         } catch (NumberFormatException ex) {
             throw new BadRequestException(fieldName + " is invalid in checkout metadata");
+        }
+    }
+
+    private Map<String, String> extractMetadata(JsonNode metadataNode) {
+        Map<String, String> metadata = new HashMap<>();
+        if (metadataNode == null || !metadataNode.isObject()) {
+            return metadata;
+        }
+
+        ObjectNode objectNode = (ObjectNode) metadataNode;
+        objectNode.forEachEntry((key, value) -> metadata.put(key, value != null && !value.isNull() ? value.asText() : null));
+        return metadata;
+    }
+
+    private record CheckoutSessionDetails(String sessionId, Map<String, String> metadata) {
+        private static CheckoutSessionDetails fromSession(Session session) {
+            return new CheckoutSessionDetails(session.getId(), session.getMetadata());
         }
     }
 }
