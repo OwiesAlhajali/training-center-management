@@ -1,9 +1,9 @@
 package com.trainingcenter.management.service;
 
 import com.stripe.model.Event;
-import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import com.trainingcenter.management.entity.*;
+import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.PaymentRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -25,123 +27,90 @@ public class WebhookService {
     private static final Logger logger = LoggerFactory.getLogger(WebhookService.class);
 
     @Transactional
-    public void handlePaymentIntentSucceeded(Event event) {
-        // Extract PaymentIntent from event
-        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (paymentIntent == null) {
-            return;
-        }
-
-        String paymentIntentId = paymentIntent.getId();
-        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId).orElse(null);
-        processSuccessfulPayment(payment, "PaymentIntent", paymentIntentId);
-    }
-
-    @Transactional
-    public void handlePaymentIntentFailed(Event event) {
-        // Extract PaymentIntent from event
-        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (paymentIntent == null) {
-            return;
-        }
-
-        String paymentIntentId = paymentIntent.getId();
-        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId).orElse(null);
-        processFailedPayment(payment, "PaymentIntent", paymentIntentId);
-    }
-
-    @Transactional
     public void handleCheckoutSessionCompleted(Event event) {
         Session checkoutSession = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
         if (checkoutSession == null) {
-            return;
+            throw new BadRequestException("Unable to deserialize checkout session");
         }
 
-        String sessionId = checkoutSession.getId();
-        Payment payment = paymentRepository.findByStripePaymentIntentId(sessionId).orElse(null);
-        processSuccessfulPayment(payment, "Checkout Session", sessionId);
-    }
-
-    @Transactional
-    public void handleCheckoutSessionExpired(Event event) {
-        Session checkoutSession = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (checkoutSession == null) {
-            return;
-        }
-
-        String sessionId = checkoutSession.getId();
-        Payment payment = paymentRepository.findByStripePaymentIntentId(sessionId).orElse(null);
-        processFailedPayment(payment, "Checkout Session", sessionId);
-    }
-
-    private void processSuccessfulPayment(Payment payment, String paymentType, String externalId) {
+        String checkoutSessionId = checkoutSession.getId();
+        Payment payment = paymentRepository.findByStripeCheckoutSessionId(checkoutSessionId).orElse(null);
         if (payment == null) {
-            logger.warn("Payment not found for {} ID: {}", paymentType, externalId);
+            logger.warn("Payment not found for checkout session {}", checkoutSessionId);
             return;
         }
 
-        // Check if already succeeded (idempotency)
-        if (payment.getStatus() == PaymentStatus.SUCCEEDED || payment.getStatus() == PaymentStatus.FAILED) {
-            logger.info("Payment already processed for {} ID: {}", paymentType, externalId);
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            logger.info("Payment already processed for checkout session {} with status {}", checkoutSessionId, payment.getStatus());
             return;
         }
 
-        // Update payment status to SUCCEEDED
-        payment.setStatus(PaymentStatus.SUCCEEDED);
-        paymentRepository.save(payment);
+        validateCheckoutMetadata(checkoutSession, payment);
 
-        // Get TrainingSession from payment
-        TrainingSession trainingSession = payment.getTrainingSession();
+        TrainingSession trainingSession = trainingSessionRepository.findByIdForUpdate(payment.getTrainingSession().getId())
+                .orElseThrow(() -> new BadRequestException("Training session not found for payment"));
         Student student = payment.getStudent();
 
-        // Check if enrollment already exists
         if (enrollmentRepository.existsByStudentAndTrainingSession(student, trainingSession)) {
-            logger.info("Enrollment already exists for student {} in training session {}", student.getId(), trainingSession.getId());
+            payment.setStatus(PaymentStatus.SUCCEEDED);
+            paymentRepository.save(payment);
+            logger.info("Enrollment already exists for student {} and training session {}", student.getId(), trainingSession.getId());
             return;
         }
 
-        // Check available seats
-        if (trainingSession.getAvailableSeats() <= 0) {
-            logger.warn("No available seats for training session {}", trainingSession.getId());
-            return;
+        if (trainingSession.getAvailableSeats() == null || trainingSession.getAvailableSeats() <= 0) {
+            logger.error("No available seats for training session {} during webhook processing", trainingSession.getId());
+            throw new IllegalStateException("No available seats for training session");
         }
-
-        // Create enrollment
-        Enrollment enrollment = new Enrollment();
-        enrollment.setStudent(student);
-        enrollment.setTrainingSession(trainingSession);
-
-        // Decrease available seats
-        trainingSession.setAvailableSeats(trainingSession.getAvailableSeats() - 1);
 
         try {
+            Enrollment enrollment = new Enrollment();
+            enrollment.setStudent(student);
+            enrollment.setTrainingSession(trainingSession);
+
+            trainingSession.setAvailableSeats(trainingSession.getAvailableSeats() - 1);
             enrollmentRepository.save(enrollment);
             trainingSessionRepository.save(trainingSession);
+
+            payment.setStatus(PaymentStatus.SUCCEEDED);
+            paymentRepository.save(payment);
         } catch (DataIntegrityViolationException ex) {
-            // Race condition - another request already created this enrollment
-            // This is fine, just restore the seats
-            trainingSession.setAvailableSeats(trainingSession.getAvailableSeats() + 1);
-            trainingSessionRepository.save(trainingSession);
-            logger.warn("Race condition detected for enrollment creation, seats restored");
+            if (enrollmentRepository.existsByStudentAndTrainingSession(student, trainingSession)) {
+                payment.setStatus(PaymentStatus.SUCCEEDED);
+                paymentRepository.save(payment);
+                logger.info("Enrollment already created by another transaction for student {} and training session {}", student.getId(), trainingSession.getId());
+                return;
+            }
+            throw ex;
+        }
+
+        logger.info("Payment succeeded and enrollment created for checkout session {}", checkoutSessionId);
+    }
+
+    private void validateCheckoutMetadata(Session checkoutSession, Payment payment) {
+        Map<String, String> metadata = checkoutSession.getMetadata();
+        if (metadata == null) {
+            throw new BadRequestException("Checkout session metadata is missing");
+        }
+
+        Long metadataStudentId = parseMetadataId(metadata.get("studentId"), "studentId");
+        Long metadataTrainingSessionId = parseMetadataId(metadata.get("trainingSessionId"), "trainingSessionId");
+
+        if (!metadataStudentId.equals(payment.getStudent().getId())
+                || !metadataTrainingSessionId.equals(payment.getTrainingSession().getId())) {
+            throw new BadRequestException("Checkout session metadata does not match the stored payment");
         }
     }
 
-    private void processFailedPayment(Payment payment, String paymentType, String externalId) {
-        if (payment == null) {
-            logger.warn("Payment not found for {} ID: {}", paymentType, externalId);
-            return;
+    private Long parseMetadataId(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new BadRequestException(fieldName + " is missing from checkout metadata");
         }
 
-        // Check if already processed
-        if (payment.getStatus() == PaymentStatus.SUCCEEDED || payment.getStatus() == PaymentStatus.FAILED) {
-            logger.info("Payment already processed for {} ID: {}", paymentType, externalId);
-            return;
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ex) {
+            throw new BadRequestException(fieldName + " is invalid in checkout metadata");
         }
-
-        // Update payment status to FAILED
-        payment.setStatus(PaymentStatus.FAILED);
-        paymentRepository.save(payment);
-
-        logger.info("Payment failed for {} ID: {}", paymentType, externalId);
     }
 }
