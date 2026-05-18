@@ -2,14 +2,16 @@ package com.trainingcenter.management.repository;
 
 import com.trainingcenter.management.entity.TrainingSession;
 import com.trainingcenter.management.entity.SessionStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TrainingSessionRepository extends JpaRepository<TrainingSession, Long>, JpaSpecificationExecutor<TrainingSession> {
@@ -21,6 +23,10 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
     List<TrainingSession> findByTenantId(@Param("tenantId") Long tenantId);
 
     List<TrainingSession> findByCourseId(Long courseId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ts FROM TrainingSession ts WHERE ts.id = :id")
+    Optional<TrainingSession> findByIdForUpdate(@Param("id") Long id);
 
     @Query("""
             SELECT ts.course.id,
