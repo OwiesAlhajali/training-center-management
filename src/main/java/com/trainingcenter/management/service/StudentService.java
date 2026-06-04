@@ -100,23 +100,6 @@ public class StudentService {
                 .toList();
     }
 
-    public StudentResponseDTO updateStudent(Long id, StudentRequestDTO request) {
-
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
-
-        student.setFirstName(request.getFirstName());
-        student.setLastName(request.getLastName());
-        student.setGender(request.getGender());
-        student.setBirthDate(request.getBirthDate());
-        student.setAddress(request.getAddress());
-        student.setInterest(request.getInterest());
-        student.setBio(request.getBio());
-
-        Student updatedStudent = studentRepository.save(student);
-        return mapToResponse(updatedStudent);
-    }
-
     @Transactional
     public StudentResponseDTO updateStudent(Long id, StudentUpdateRequestDTO request) {
         Student student = studentRepository.findById(id)
