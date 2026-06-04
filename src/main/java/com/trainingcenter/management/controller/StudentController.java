@@ -4,11 +4,13 @@ import com.trainingcenter.management.dto.StudentCompletionPercentageDTO;
 import com.trainingcenter.management.dto.StudentRequestDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.dto.StudentTrainingHoursDTO;
+import com.trainingcenter.management.dto.StudentUpdateRequestDTO;
 import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,10 +40,10 @@ public class StudentController {
         return studentService.getAllStudents();
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public StudentResponseDTO updateStudent(
             @PathVariable Long id,
-            @Valid @RequestBody StudentRequestDTO request) {
+            @Valid @ModelAttribute StudentUpdateRequestDTO request) {
 
         return studentService.updateStudent(id, request);
     }
