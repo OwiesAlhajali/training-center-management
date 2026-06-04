@@ -43,6 +43,9 @@ public class Student {
     @Column(length = 255)
     private String address;
 
+    @Column(length = 2000)
+    private String bio;
+
     /*
      Relationship with User
      Each Student has exactly one User account

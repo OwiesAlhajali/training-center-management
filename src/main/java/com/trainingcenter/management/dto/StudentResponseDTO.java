@@ -27,6 +27,8 @@ public class StudentResponseDTO {
 
     private String interest;
 
+    private String bio;
+
     private LocalDate enrollmentDate;
 
     // User info
