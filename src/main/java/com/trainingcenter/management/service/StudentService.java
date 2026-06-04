@@ -2,6 +2,7 @@ package com.trainingcenter.management.service;
 import com.trainingcenter.management.dto.StudentCompletionPercentageDTO;
 import com.trainingcenter.management.dto.StudentRequestDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
+import com.trainingcenter.management.dto.StudentUpdateRequestDTO;
 import com.trainingcenter.management.dto.StudentTrainingHoursDTO;
 import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.entity.Attendance;
@@ -99,18 +100,31 @@ public class StudentService {
                 .toList();
     }
 
-    public StudentResponseDTO updateStudent(Long id, StudentRequestDTO request) {
-
+    @Transactional
+    public StudentResponseDTO updateStudent(Long id, StudentUpdateRequestDTO request) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
 
+        User user = student.getUser();
+
+        if (!user.getUsername().equals(request.getUsername()) && userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new DuplicateResourceException("Username already exists");
+        }
+
+        user.setUsername(request.getUsername());
         student.setFirstName(request.getFirstName());
         student.setLastName(request.getLastName());
         student.setGender(request.getGender());
         student.setBirthDate(request.getBirthDate());
         student.setAddress(request.getAddress());
-        student.setInterest(request.getInterest());
+        student.setBio(request.getBio());
 
+        if (request.getProfilePicture() != null && !request.getProfilePicture().isEmpty()) {
+            String imageUrl = imageService.uploadImage(request.getProfilePicture());
+            user.setImage(imageUrl);
+        }
+
+        userRepository.save(user);
         Student updatedStudent = studentRepository.save(student);
         return mapToResponse(updatedStudent);
     }
@@ -227,6 +241,7 @@ public class StudentService {
                 .birthDate(student.getBirthDate())
                 .enrollmentDate(student.getEnrollmentDate())
                 .address(student.getAddress())
+                .bio(student.getBio())
                 .interest(student.getInterest())
                 .userId(user.getId())
                 .username(user.getUsername())
