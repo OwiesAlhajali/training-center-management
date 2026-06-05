@@ -19,10 +19,10 @@ public class EmailService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${RESEND_API_KEY}")
+    @Value("${resend.api.key}")
     private String resendApiKey;
 
-    @Value("${RESEND_FROM_EMAIL}")
+    @Value("${resend.from.email}")
     private String senderEmail;
 
     public void sendOtpEmail(String to, String code) {
