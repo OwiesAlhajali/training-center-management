@@ -28,7 +28,7 @@ public class EmailService {
     public void sendOtpEmail(String to, String code) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("from", senderEmail);
-        requestBody.put("to", to);
+        requestBody.put("to", new String[]{to});
         requestBody.put("subject", "Verification code- Training Center");
         requestBody.put("html", "<p>Your verification code is: <strong>" + code + "</strong></p><p>The code expires after 5 minutes.</p>");
 
