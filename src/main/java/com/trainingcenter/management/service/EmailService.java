@@ -28,7 +28,7 @@ public class EmailService {
     public void sendOtpEmail(String to, String code) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("from", senderEmail);
-        requestBody.put("to", new String[]{to});
+        requestBody.put("to", to);
         requestBody.put("subject", "Verification code- Training Center");
         requestBody.put("html", "<p>Your verification code is: <strong>" + code + "</strong></p><p>The code expires after 5 minutes.</p>");
 
@@ -38,10 +38,22 @@ public class EmailService {
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
+      
+
         try {
-            restTemplate.postForEntity(RESEND_EMAIL_URL, requestEntity, String.class);
+             restTemplate.postForEntity(RESEND_EMAIL_URL, requestEntity, String.class);
+        } catch (org.springframework.web.client.HttpClientErrorException ex) 
+         System.out.println("Resend API Error Response: " + ex.getResponseBodyAsString());
+              throw new RuntimeException("Failed to send OTP email via Resend: " + ex.getResponseBodyAsString(), ex);
         } catch (RestClientException ex) {
-            throw new RuntimeException("Failed to send OTP email via Resend", ex);
+          throw new RuntimeException("Failed to send OTP email via Resend", ex);
         }
+        
+
+
+
+
+
+        
     }
 }
