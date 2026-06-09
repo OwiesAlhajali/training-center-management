@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface OtpRepository extends JpaRepository<OtpEntry, Long> {
     
     Optional<OtpEntry> findTopByEmailAndUsedFalseOrderByExpiryDateDesc(String email);
+    Optional<OtpEntry> findTopByEmailAndUsedTrueOrderByExpiryDateDesc(String email);
 
     @Modifying
     @Transactional
