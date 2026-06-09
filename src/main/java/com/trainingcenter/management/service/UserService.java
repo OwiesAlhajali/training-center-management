@@ -5,6 +5,7 @@ import com.trainingcenter.management.dto.UserResponseDTO;
 import com.trainingcenter.management.entity.User;
 import com.trainingcenter.management.exception.DuplicateResourceException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
+import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -79,6 +80,14 @@ public class UserService {
         User updatedUser = userRepository.save(user);
 
         return mapToResponse(updatedUser);
+    }
+
+    public void resetPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("No user found with the provided email."));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
     public void deleteUser(Long id) {
