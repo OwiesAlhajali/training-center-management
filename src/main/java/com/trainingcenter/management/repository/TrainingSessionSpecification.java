@@ -30,7 +30,8 @@ public class TrainingSessionSpecification {
             String instituteName,
             String location,
             BigDecimal minPrice,
-            BigDecimal maxPrice) {
+            BigDecimal maxPrice,
+            Boolean availableForRegistration) {
         
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -80,6 +81,12 @@ public class TrainingSessionSpecification {
             if (maxPrice != null) {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(
                     root.get("price"), maxPrice));
+            }
+
+            // ===== Available for Registration Filter =====
+            if (Boolean.TRUE.equals(availableForRegistration)) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), com.trainingcenter.management.entity.SessionStatus.UPCOMING));
+                predicates.add(criteriaBuilder.greaterThan(root.get("availableSeats"), 0));
             }
             
             // Combine all predicates using AND logic
