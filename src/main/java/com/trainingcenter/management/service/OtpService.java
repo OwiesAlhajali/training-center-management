@@ -36,7 +36,7 @@ public class OtpService {
         OtpEntry otp = OtpEntry.builder()
                 .email(email)
                 .code(code)
-                .expiryDate(LocalDateTime.now().plusMinutes(5))
+                .expiryDate(LocalDateTime.now().plusMinutes(15))
                 .build();
         
         otpRepository.save(otp);
@@ -61,6 +61,18 @@ public class OtpService {
 
         otp.setUsed(true);
         otpRepository.save(otp);
+    }
+
+    @Transactional
+    public void ensureOtpVerified(String email) {
+        otpRepository.deleteExpiredOtps(LocalDateTime.now());
+
+        OtpEntry otp = otpRepository.findTopByEmailAndUsedTrueOrderByExpiryDateDesc(email)
+                .orElseThrow(() -> new BadRequestException("OTP must be verified before resetting password."));
+
+        if (otp.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("The verification code has expired");
+        }
     }
 
     // Scheduled task to clean up expired OTPs every 15 minutes

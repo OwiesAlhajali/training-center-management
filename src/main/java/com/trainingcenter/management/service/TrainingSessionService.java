@@ -74,7 +74,8 @@ public class TrainingSessionService {
                 normalizedInstituteName,
                 normalizedLocation,
                 minPrice,
-                maxPrice
+                maxPrice,
+                true
         );
 
         return sessionRepository.findAll(spec).stream()
@@ -241,7 +242,7 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
                 .availableSeats(session.getAvailableSeats())
                 .minSeats(session.getMinSeats())
                 .numberOfLectures(session.getNumberOfLectures())
-		.requiredEquipment(session.getRequiredEquipment())
+                .requiredEquipment(session.getRequiredEquipment())
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .courseName(session.getCourse().getName())
@@ -249,7 +250,7 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
                 .classroomName(session.getClassRoom().getNumber())
                 .teacherName(session.getTeacher() != null && session.getTeacher().getUser() != null ? session.getTeacher().getUser().getUsername() : null)
                 .teacherId(session.getTeacher() != null ? session.getTeacher().getId() : null)
-                .instituteName(session.getClassRoom().getInstitute().getName())
+                .instituteName(session.getClassRoom().getInstitute() != null ? session.getClassRoom().getInstitute().getName() : null)
                 .instituteId(session.getClassRoom().getInstitute() != null ? session.getClassRoom().getInstitute().getId() : null)
                 .image(session.getImage())
                 .build();
