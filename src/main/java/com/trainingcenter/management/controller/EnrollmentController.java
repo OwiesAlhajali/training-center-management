@@ -1,4 +1,5 @@
 package com.trainingcenter.management.controller;
+import com.trainingcenter.management.dto.ActiveCourseResponseDTO;
 import com.trainingcenter.management.dto.EnrollmentRequestDTO;
 import com.trainingcenter.management.dto.EnrollmentResponseDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
@@ -51,6 +52,16 @@ public class EnrollmentController {
 
         List<StudentResponseDTO> response =
                 enrollmentService.getAllUniqueEnrolledStudents();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/student/{studentId}/active")
+    public ResponseEntity<List<ActiveCourseResponseDTO>> getActiveCoursesForStudent(
+            @PathVariable Long studentId) {
+
+        List<ActiveCourseResponseDTO> response =
+                enrollmentService.getActiveCoursesForStudent(studentId);
 
         return ResponseEntity.ok(response);
     }
