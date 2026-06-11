@@ -90,6 +90,7 @@ public class CourseRatingService {
         ratingRepository.delete(rating);
     }
 
+    @Transactional
     public List<CourseRatingResponseDTO> getRatingsByCourse(Long courseId) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFoundException("Course not found");
