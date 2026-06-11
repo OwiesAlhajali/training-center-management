@@ -74,11 +74,6 @@ public class WebhookService {
             enrollment.setTrainingSession(trainingSession);
 
             trainingSession.setAvailableSeats(trainingSession.getAvailableSeats() - 1);
-
-            if (trainingSession.getStatus() != SessionStatus.ACTIVE) {
-                trainingSession.setStatus(SessionStatus.ACTIVE);
-            }
-
             enrollmentRepository.save(enrollment);
             trainingSessionRepository.save(trainingSession);
 
