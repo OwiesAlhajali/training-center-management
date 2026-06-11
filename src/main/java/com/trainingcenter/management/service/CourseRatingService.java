@@ -1,4 +1,5 @@
 package com.trainingcenter.management.service;
+
 import com.trainingcenter.management.dto.CourseRatingRequestDTO;
 import com.trainingcenter.management.dto.CourseRatingResponseDTO;
 import com.trainingcenter.management.entity.Course;
@@ -14,6 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,6 +88,26 @@ public class CourseRatingService {
         }
 
         ratingRepository.delete(rating);
+    }
+
+    public List<CourseRatingResponseDTO> getRatingsByCourse(Long courseId) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course not found");
+        }
+
+        return ratingRepository.findByCourseId(courseId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public BigDecimal getAverageRatingForCourse(Long courseId) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course not found");
+        }
+
+        Double avg = ratingRepository.findAverageRatingByCourseId(courseId);
+        return avg != null ? BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
     private void validateRating(BigDecimal rating) {
