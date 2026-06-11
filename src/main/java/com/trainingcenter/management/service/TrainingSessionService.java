@@ -245,6 +245,7 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
                 .requiredEquipment(session.getRequiredEquipment())
                 .duration(session.getDuration())
                 .status(session.getStatus())
+                .courseId(session.getCourse().getId())
                 .courseName(session.getCourse().getName())
                 .courseDescription(session.getCourse().getDescription())
                 .classroomName(session.getClassRoom().getNumber())

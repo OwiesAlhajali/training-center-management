@@ -82,7 +82,8 @@ public class EnrollmentService {
 
         enrollmentRepository.delete(enrollment);
     }
-
+    
+    @Transactional(readOnly = true)
     public List<EnrollmentResponseDTO> getEnrollmentsBySession(Long sessionId) {
 
         // Validate session exists
@@ -97,6 +98,7 @@ public class EnrollmentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ActiveCourseResponseDTO> getActiveCoursesForStudent(Long studentId) {
         if (!studentRepository.existsById(studentId)) {
             throw new ResourceNotFoundException("Student not found");
@@ -109,6 +111,7 @@ public class EnrollmentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<StudentResponseDTO> getAllUniqueEnrolledStudents() {
         return enrollmentRepository.findDistinctStudents()
                 .stream()
