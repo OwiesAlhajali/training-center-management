@@ -19,6 +19,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     @Query("SELECT e FROM Enrollment e WHERE e.trainingSession.id = :sessionId")
     List<Enrollment> findByTrainingSessionId(@Param("sessionId") Long sessionId);
 
+    @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.status = :status")
+    List<Enrollment> findByStudentIdAndTrainingSessionStatus(@Param("studentId") Long studentId,
+                                                              @Param("status") com.trainingcenter.management.entity.SessionStatus status);
+
     boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId,Long courseId);
 
     @Query("SELECT e.trainingSession.course.id, COUNT(DISTINCT e.student.id) " +
