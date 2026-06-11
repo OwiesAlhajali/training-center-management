@@ -14,7 +14,7 @@ import com.trainingcenter.management.repository.AttendanceRepository;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.StudentRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
