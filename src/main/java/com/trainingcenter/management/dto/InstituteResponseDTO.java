@@ -21,7 +21,8 @@ public class InstituteResponseDTO {
     private List<String> workingDays;
     private InstituteStatus status;
     private Long userId;
-    private String ownerName; //from User
+    private String ownerName;
     private Long tenantId;
-    private String tenantName; // from Tenant
+    private String tenantName;
+    private String tenantKey;
 }
