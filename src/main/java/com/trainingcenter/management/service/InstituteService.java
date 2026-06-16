@@ -49,13 +49,16 @@ public class InstituteService {
 
         validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
 
+        List<String> daysStr = requestDTO.getWorkingDays() == null ? List.of() :
+                requestDTO.getWorkingDays().stream().map(Enum::name).collect(Collectors.toList());
+
         Institute institute = Institute.builder()
                 .name(requestDTO.getName())
                 .description(requestDTO.getDescription())
                 .location(requestDTO.getLocation())
                 .phoneNumber(requestDTO.getPhoneNumber())
                 .email(requestDTO.getEmail())
-                .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
+                .workingDays(daysStr)
                 .startTime(requestDTO.getStartTime())
                 .endTime(requestDTO.getEndTime())
                 .status(requestDTO.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : requestDTO.getStatus())
@@ -76,12 +79,15 @@ public class InstituteService {
 
         validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
 
+        List<String> daysStr = requestDTO.getWorkingDays() == null ? List.of() :
+                requestDTO.getWorkingDays().stream().map(Enum::name).collect(Collectors.toList());
+
         existing.setName(requestDTO.getName());
         existing.setDescription(requestDTO.getDescription());
         existing.setLocation(requestDTO.getLocation());
         existing.setPhoneNumber(requestDTO.getPhoneNumber());
         existing.setEmail(requestDTO.getEmail());
-        existing.setWorkingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays());
+        existing.setWorkingDays(daysStr);
         existing.setStartTime(requestDTO.getStartTime());
         existing.setEndTime(requestDTO.getEndTime());
         existing.setStatus(requestDTO.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : requestDTO.getStatus());
