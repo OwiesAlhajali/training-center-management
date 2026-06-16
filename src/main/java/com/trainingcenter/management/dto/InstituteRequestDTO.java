@@ -2,15 +2,18 @@ package com.trainingcenter.management.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.trainingcenter.management.entity.InstituteStatus;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
 
 @Data
 public class InstituteRequestDTO {
+
     @NotNull(message = "User ID is required")
     private Long userId;
 
@@ -24,16 +27,18 @@ public class InstituteRequestDTO {
 
     private String phoneNumber;
 
+    @Email(message = "Invalid email format")
     private String email;
 
     @NotNull(message = "Start time is required")
-    @JsonFormat(pattern = "HH:mm:ss")
+    @JsonFormat(pattern = "hh:mm a")
     private LocalTime startTime;
 
     @NotNull(message = "End time is required")
-    @JsonFormat(pattern = "HH:mm:ss")
+    @JsonFormat(pattern = "hh:mm a")
     private LocalTime endTime;
 
-    private List<String> workingDays;
+    private List<DayOfWeek> workingDays;
+
     private InstituteStatus status;
 }

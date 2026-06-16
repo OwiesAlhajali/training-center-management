@@ -1,5 +1,6 @@
 package com.trainingcenter.management.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.trainingcenter.management.entity.InstituteStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -12,8 +13,13 @@ import java.util.List;
 public class InstituteResponseDTO {
     private Long id;
     private String name;
+
+    @JsonFormat(pattern = "hh:mm a")
     private LocalTime startTime;
+
+    @JsonFormat(pattern = "hh:mm a")
     private LocalTime endTime;
+
     private String description;
     private String location;
     private String phoneNumber;
