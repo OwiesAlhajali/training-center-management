@@ -18,7 +18,7 @@ import com.trainingcenter.management.repository.TrainingSessionRepository;
 import com.trainingcenter.management.dto.RegisterRequestDTO;
 import com.trainingcenter.management.service.RegisterService;
 import com.trainingcenter.management.repository.RegisterRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
