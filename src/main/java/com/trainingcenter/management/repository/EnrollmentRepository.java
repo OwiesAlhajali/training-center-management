@@ -11,35 +11,37 @@ import java.util.List;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
-    boolean existsByStudentAndTrainingSession(Student student, TrainingSession trainingSession);
+        boolean existsByStudentAndTrainingSession(Student student, TrainingSession trainingSession);
 
-    @Query("SELECT DISTINCT e.student FROM Enrollment e")
-    List<Student> findDistinctStudents();
+        @Query("SELECT DISTINCT e.student FROM Enrollment e")
+        List<Student> findDistinctStudents();
 
-    @Query("SELECT e FROM Enrollment e WHERE e.trainingSession.id = :sessionId")
-    List<Enrollment> findByTrainingSessionId(@Param("sessionId") Long sessionId);
+        @Query("SELECT e FROM Enrollment e WHERE e.trainingSession.id = :sessionId")
+        List<Enrollment> findByTrainingSessionId(@Param("sessionId") Long sessionId);
 
-    @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.status = :status")
-    List<Enrollment> findByStudentIdAndTrainingSessionStatus(@Param("studentId") Long studentId,
-                                                              @Param("status") com.trainingcenter.management.entity.SessionStatus status);
+        @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.status = :status")
+        List<Enrollment> findByStudentIdAndTrainingSessionStatus(@Param("studentId") Long studentId,
+                        @Param("status") com.trainingcenter.management.entity.SessionStatus status);
 
-    boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId,Long courseId);
+        boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId, Long courseId);
 
-    @Query("SELECT e.trainingSession.course.id, COUNT(DISTINCT e.student.id) " +
-            "FROM Enrollment e " +
-            "WHERE e.trainingSession.teacher.id = :teacherId " +
-            "GROUP BY e.trainingSession.course.id")
-    List<Object[]> countStudentsByTeacherPerCourse(@Param("teacherId") Long teacherId);
+        @Query("SELECT e.trainingSession.course.id, COUNT(DISTINCT e.student.id) " +
+                        "FROM Enrollment e " +
+                        "WHERE e.trainingSession.teacher.id = :teacherId " +
+                        "GROUP BY e.trainingSession.course.id")
+        List<Object[]> countStudentsByTeacherPerCourse(@Param("teacherId") Long teacherId);
 
-    @Query("""
-            SELECT FUNCTION('MONTH', e.createdAt), COUNT(e)
-            FROM Enrollment e
-            WHERE e.trainingSession.classRoom.institute.id = :instituteId
-              AND FUNCTION('YEAR', e.createdAt) = :year
-            GROUP BY FUNCTION('MONTH', e.createdAt)
-            ORDER BY FUNCTION('MONTH', e.createdAt)
-            """)
-    List<Object[]> getMonthlyRegistrationsByInstituteAndYear(@Param("instituteId") Long instituteId,
-                                                              @Param("year") Integer year);
+        @Query("""
+                        SELECT FUNCTION('MONTH', e.createdAt), COUNT(e)
+                        FROM Enrollment e
+                        WHERE e.trainingSession.classRoom.institute.id = :instituteId
+                          AND FUNCTION('YEAR', e.createdAt) = :year
+                        GROUP BY FUNCTION('MONTH', e.createdAt)
+                        ORDER BY FUNCTION('MONTH', e.createdAt)
+                        """)
+        List<Object[]> getMonthlyRegistrationsByInstituteAndYear(@Param("instituteId") Long instituteId,
+                        @Param("year") Integer year);
+
+        @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.course.tenant.id = :tenantId")
+        long countByStudentIdAndTenantId(@Param("studentId") Long studentId, @Param("tenantId") Long tenantId);
 }
-
