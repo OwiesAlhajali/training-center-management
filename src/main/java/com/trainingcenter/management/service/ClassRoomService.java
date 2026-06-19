@@ -7,6 +7,7 @@ import com.trainingcenter.management.entity.Institute;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.ClassRoomRepository;
 import com.trainingcenter.management.repository.InstituteRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class ClassRoomService {
     private final ClassRoomRepository classRoomRepository;
     private final InstituteRepository instituteRepository;
 
+	@Transactional
     public ClassRoomResponseDTO createClassRoom(ClassRoomRequestDTO requestDTO) {
         Institute institute = instituteRepository.findById(requestDTO.getInstituteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Institute not found with ID: " + requestDTO.getInstituteId()));
@@ -35,12 +37,14 @@ public class ClassRoomService {
         return mapToResponse(classRoomRepository.save(classroom));
     }
 
+	@Transactional(readOnly = true)
     public ClassRoomResponseDTO getClassRoomById(Long id) {
         ClassRoom classroom = classRoomRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Classroom not found with ID: " + id));
         return mapToResponse(classroom);
     }
 
+	@Transactional(readOnly = true)
     public List<ClassRoomResponseDTO> getAllByInstitute(Long instituteId) {
         if (!instituteRepository.existsById(instituteId)) {
             throw new ResourceNotFoundException("Institute not found");
@@ -50,7 +54,7 @@ public class ClassRoomService {
                 .collect(Collectors.toList());
     }
 
-	
+	@Transactional(readOnly = true)
     public List<ClassRoomResponseDTO> searchByDevice(String device, Long instituteId) {
          return classRoomRepository.findByAvailableDevicesContainingIgnoreCaseAndInstituteId(device, instituteId)
             .stream()
@@ -58,6 +62,7 @@ public class ClassRoomService {
             .collect(Collectors.toList());
     }
 
+	@Transactional
     public ClassRoomResponseDTO updateClassRoom(Long id, ClassRoomRequestDTO requestDTO) {
         ClassRoom existing = classRoomRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Classroom not found with ID: " + id));
@@ -70,6 +75,7 @@ public class ClassRoomService {
         return mapToResponse(classRoomRepository.save(existing));
     }
 
+    @Transactional
     public void deleteClassRoom(Long id) {
         if (!classRoomRepository.existsById(id)) {
             throw new ResourceNotFoundException("Classroom not found");

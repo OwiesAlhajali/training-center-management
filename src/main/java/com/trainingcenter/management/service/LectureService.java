@@ -45,6 +45,7 @@ public class LectureService {
 
 
     // Get lectures by session ID
+    @Transactional(readOnly = true)
     public List<LectureResponseDTO> getLecturesBySessionId(Long sessionId) {
         return lectureRepository.findByTrainingSession_Id(sessionId)
                 .stream()
@@ -53,6 +54,7 @@ public class LectureService {
     }
 
     // Get all lectures in the system
+    @Transactional(readOnly = true)
     public List<LectureResponseDTO> getAllLectures() {
         return lectureRepository.findAll()
                 .stream()
@@ -61,6 +63,7 @@ public class LectureService {
     }
 
     // Get single lecture by ID
+    @Transactional(readOnly = true)
     public LectureResponseDTO getLectureById(Long id) {
         Lecture lecture = lectureRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lecture not found with ID: " + id));
