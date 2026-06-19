@@ -1,4 +1,5 @@
 package com.trainingcenter.management.service;
+
 import com.trainingcenter.management.dto.ActiveCourseResponseDTO;
 import com.trainingcenter.management.dto.EnrollmentRequestDTO;
 import com.trainingcenter.management.dto.EnrollmentResponseDTO;
@@ -14,6 +15,9 @@ import com.trainingcenter.management.repository.AttendanceRepository;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.StudentRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
+import com.trainingcenter.management.dto.RegisterRequestDTO;
+import com.trainingcenter.management.service.RegisterService;
+import com.trainingcenter.management.repository.RegisterRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -30,6 +34,8 @@ public class EnrollmentService {
     private final StudentRepository studentRepository;
     private final TrainingSessionRepository trainingSessionRepository;
     private final AttendanceRepository attendanceRepository;
+    private final RegisterService registerService;
+    private final RegisterRepository registerRepository;
 
     @Transactional
     public EnrollmentResponseDTO createEnrollment(EnrollmentRequestDTO request) {
@@ -42,12 +48,26 @@ public class EnrollmentService {
         TrainingSession session = trainingSessionRepository.findById(request.getTrainingSessionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Training session not found"));
 
+        // Ensure Register exists for student and tenant (idempotent)
+        if (session.getCourse() != null && session.getCourse().getTenant() != null) {
+            Long tenantId = session.getCourse().getTenant().getId();
+            RegisterRequestDTO registerRequest = new RegisterRequestDTO();
+            registerRequest.setStudentId(request.getStudentId());
+            registerRequest.setTenantId(tenantId);
+            try {
+                registerService.createRegister(registerRequest);
+                // If created successfully, log or continue
+            } catch (DuplicateResourceException e) {
+                // Register already exists, which is fine
+            }
+        }
+
         // Check duplication
         if (enrollmentRepository.existsByStudentAndTrainingSession(student, session)) {
             throw new DuplicateResourceException("Student already enrolled");
         }
 
-        //  Check seats
+        // Check seats
         if (session.getAvailableSeats() <= 0) {
             throw new IllegalStateException("No available seats");
         }
@@ -76,11 +96,29 @@ public class EnrollmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found"));
 
         TrainingSession session = enrollment.getTrainingSession();
+        Student student = enrollment.getStudent();
+
+        Long tenantId = null;
+        if (session.getCourse() != null && session.getCourse().getTenant() != null) {
+            tenantId = session.getCourse().getTenant().getId();
+        }
+
+        // Check how many enrollments this student has in this tenant BEFORE deleting
+        long enrollmentsInTenant = 0;
+        if (tenantId != null) {
+            enrollmentsInTenant = enrollmentRepository.countByStudentIdAndTenantId(student.getId(), tenantId);
+        }
 
         // increase seats back
         session.setAvailableSeats(session.getAvailableSeats() + 1);
 
         enrollmentRepository.delete(enrollment);
+
+        // Only delete Register if this was the LAST enrollment for this student in this
+        // tenant
+        if (tenantId != null && enrollmentsInTenant <= 1) {
+            registerRepository.deleteByStudentIdAndTenantId(student.getId(), tenantId);
+        }
     }
     
     @Transactional(readOnly = true)
@@ -104,7 +142,8 @@ public class EnrollmentService {
             throw new ResourceNotFoundException("Student not found");
         }
 
-        List<Enrollment> activeEnrollments = enrollmentRepository.findByStudentIdAndTrainingSessionStatus(studentId, SessionStatus.ACTIVE);
+        List<Enrollment> activeEnrollments = enrollmentRepository.findByStudentIdAndTrainingSessionStatus(studentId,
+                SessionStatus.ACTIVE);
 
         return activeEnrollments.stream()
                 .map(this::mapToActiveCourseResponse)
@@ -145,17 +184,18 @@ public class EnrollmentService {
                 e.getId(),
                 e.getStudent().getId(),
                 e.getTrainingSession().getId(),
-                e.getCreatedAt()
-        );
+                e.getCreatedAt());
     }
 
     private ActiveCourseResponseDTO mapToActiveCourseResponse(Enrollment enrollment) {
         TrainingSession session = enrollment.getTrainingSession();
 
-        long attendedLectures = attendanceRepository.countPresentLectures(enrollment.getStudent().getId(), session.getId());
+        long attendedLectures = attendanceRepository.countPresentLectures(enrollment.getStudent().getId(),
+                session.getId());
         long totalLectures = attendanceRepository.countTotalProcessedLectures(session.getId());
 
-        double progressPercentage = totalLectures == 0 ? 0.0 : Math.round(((double) attendedLectures / totalLectures * 100) * 100.0) / 100.0;
+        double progressPercentage = totalLectures == 0 ? 0.0
+                : Math.round(((double) attendedLectures / totalLectures * 100) * 100.0) / 100.0;
 
         double remainingHours = session.getNumberOfLectures() == null || session.getNumberOfLectures() == 0
                 ? 0.0
@@ -171,5 +211,5 @@ public class EnrollmentService {
                 .build();
     }
 
-    //  read for the student id and for all student related to the TraningSession
+    // read for the student id and for all student related to the TraningSession
 }
