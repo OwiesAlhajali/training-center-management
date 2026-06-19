@@ -13,6 +13,9 @@ import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.PaymentRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
+import com.trainingcenter.management.dto.RegisterRequestDTO;
+import com.trainingcenter.management.exception.DuplicateResourceException;
+import com.trainingcenter.management.service.RegisterService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +34,7 @@ public class WebhookService {
     private final EnrollmentRepository enrollmentRepository;
     private final TrainingSessionRepository trainingSessionRepository;
     private final ObjectMapper objectMapper;
+    private final RegisterService registerService;
 
     private static final Logger logger = LoggerFactory.getLogger(WebhookService.class);
 
@@ -62,6 +66,19 @@ public class WebhookService {
             logger.info("Enrollment already exists for student {} and training session {}", student.getId(), trainingSession.getId());
             return;
         }
+        
+        // Ensure Register exists for student and tenant
+        if (trainingSession.getCourse() != null && trainingSession.getCourse().getTenant() != null) {
+            Long tenantId = trainingSession.getCourse().getTenant().getId();
+                RegisterRequestDTO registerRequest = new RegisterRequestDTO();
+                    registerRequest.setStudentId(student.getId());
+                        registerRequest.setTenantId(tenantId);
+                            try {
+                                    registerService.createRegister(registerRequest);
+                                        } catch (DuplicateResourceException e) {
+                                                // Already registered, continue
+                                                    }
+                                                    }
 
         if (trainingSession.getAvailableSeats() == null || trainingSession.getAvailableSeats() <= 0) {
             logger.error("No available seats for training session {} during webhook processing", trainingSession.getId());
