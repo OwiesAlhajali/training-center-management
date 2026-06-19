@@ -31,16 +31,21 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
                         "GROUP BY e.trainingSession.course.id")
         List<Object[]> countStudentsByTeacherPerCourse(@Param("teacherId") Long teacherId);
 
-        @Query("""
-                        SELECT FUNCTION('MONTH', e.createdAt), COUNT(e)
-                        FROM Enrollment e
-                        WHERE e.trainingSession.classRoom.institute.id = :instituteId
-                          AND FUNCTION('YEAR', e.createdAt) = :year
-                        GROUP BY FUNCTION('MONTH', e.createdAt)
-                        ORDER BY FUNCTION('MONTH', e.createdAt)
-                        """)
-        List<Object[]> getMonthlyRegistrationsByInstituteAndYear(@Param("instituteId") Long instituteId,
-                        @Param("year") Integer year);
+        @Query(value = """
+                SELECT 
+                   EXTRACT(MONTH FROM e.created_at) AS month,
+                    COUNT(*) AS registrations
+                FROM enrollments e
+                JOIN training_sessions ts ON e.training_session_id = ts.id
+                JOIN classrooms cr ON ts.classroom_id = cr.id
+                WHERE cr.institute_id = :instituteId
+                AND EXTRACT(YEAR FROM e.created_at) = :year
+                GROUP BY EXTRACT(MONTH FROM e.created_at)
+                ORDER BY EXTRACT(MONTH FROM e.created_at)
+            """, nativeQuery = true)
+        List<Object[]> getMonthlyRegistrationsByInstituteAndYear(
+        @Param("instituteId") Long instituteId,
+        @Param("year") Integer year);
 
         @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.course.tenant.id = :tenantId")
         long countByStudentIdAndTenantId(@Param("studentId") Long studentId, @Param("tenantId") Long tenantId);
