@@ -61,15 +61,16 @@ public class InstituteService {
         return mapToResponse(instituteRepository.save(institute));
     }
 
-    @Transactional(readOnly = true)
-    public List<InstituteResponseDTO> getInstitutesByTenant(Long tenantId) {
-        if (!tenantRepository.existsById(tenantId)) {
-            throw new ResourceNotFoundException("Tenant not found");
+  @Transactional(readOnly = true)
+  public List<InstituteResponseDTO> getInstitutesByUser(Long userId) {
+       if (!userRepository.existsById(userId)) {
+           throw new ResourceNotFoundException("User not found with ID: " + userId);
         }
-        return instituteRepository.findByTenantId(tenantId).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+    
+        return instituteRepository.findByUserId(userId).stream()
+               .map(this::mapToResponse)
+               .collect(Collectors.toList());
+   }
 
     @Transactional(readOnly = true)
     public InstituteResponseDTO getInstituteById(Long id) {

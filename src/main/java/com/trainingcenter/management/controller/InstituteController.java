@@ -29,10 +29,11 @@ public class InstituteController {
         return ResponseEntity.ok(instituteService.getInstituteById(id));
     }
 
-    @GetMapping("/tenant/{tenantId}")
-    public ResponseEntity<List<InstituteResponseDTO>> getByTenant(@PathVariable Long tenantId) {
-        return ResponseEntity.ok(instituteService.getInstitutesByTenant(tenantId));
-    }
+    
+   @GetMapping("/user/{userId}")
+   public ResponseEntity<List<InstituteResponseDTO>> getByUser(@PathVariable Long userId) {
+       return ResponseEntity.ok(instituteService.getInstitutesByUser(userId));
+   }
 
     @GetMapping
     public ResponseEntity<List<InstituteResponseDTO>> getAll() {
