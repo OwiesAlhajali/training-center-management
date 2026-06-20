@@ -7,5 +7,5 @@ import java.util.List;
 
 @Repository
 public interface InstituteRepository extends JpaRepository<Institute, Long> {
-    List<Institute> findByTenantId(Long tenantId);
+    List<Institute> findByUserId(Long userId);
 }
