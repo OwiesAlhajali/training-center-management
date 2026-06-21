@@ -122,7 +122,7 @@ public class TeacherService {
                 .collect(Collectors.toList());
     }
 
-
+    @Transactional
     public TeacherResponseDTO updateTeacher(Long id, TeacherRequestDTO requestDTO) {
 
         Teacher existing = teacherRepository.findById(id)
@@ -140,7 +140,7 @@ public class TeacherService {
         return mapToResponse(teacherRepository.save(existing));
     }
 
-
+    @Transactional
     public void deleteTeacher(Long id) {
 
         Teacher teacher = teacherRepository.findById(id)

@@ -34,6 +34,9 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final InstituteRepository instituteRepository; 
+    private final EnrollmentRepository enrollmentRepository;  
+    private final RegisterRepository registerRepository;     
     private final PasswordEncoder passwordEncoder;
     private final AttendanceRepository attendanceRepository;
     private final LectureRepository lectureRepository;
@@ -128,14 +131,31 @@ public class StudentService {
         Student updatedStudent = studentRepository.save(student);
         return mapToResponse(updatedStudent);
     }
+ 
 
-    public void deleteStudent(Long id) {
+@Transactional
+public void deleteStudentRegisterForInstitute(Long studentId, Long instituteId) {
+    Student student = studentRepository.findById(studentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
 
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
-
-        studentRepository.delete(student);
+    if (!instituteRepository.existsById(instituteId)) { 
+        throw new ResourceNotFoundException("Institute not found with id: " + instituteId);
     }
+
+    List<Enrollment> enrollmentsInInstitute = enrollmentRepository.findEnrollmentsByStudentAndInstitute(studentId, instituteId);
+
+    boolean hasActiveOrUpcoming = enrollmentsInInstitute.stream()
+            .anyMatch(e -> {
+                SessionStatus status = e.getTrainingSession().getStatus();
+                return status == SessionStatus.ACTIVE || status == SessionStatus.UPCOMING;
+            });
+
+    if (hasActiveOrUpcoming) {
+        throw new BadRequestException("Cannot delete register: Student has active or upcoming enrollments in this institute.");
+    }
+
+    registerRepository.deleteByStudentIdAndTenantId(studentId, getTenantIdByInstitute(instituteId));
+}
 
     /**
      * Uploads a student profile image and stores the Cloudinary URL in User.image.

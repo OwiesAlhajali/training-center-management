@@ -48,10 +48,14 @@ public class StudentController {
         return studentService.updateStudent(id, request);
     }
 
-    @DeleteMapping("/{id}")
+
+    @DeleteMapping("/{studentId}/register/institute/{instituteId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteStudent(@PathVariable Long id) {
-        studentService.deleteStudent(id);
+    public void deleteStudentRegisterForInstitute(
+            @PathVariable Long studentId,
+            @PathVariable Long instituteId) {
+    
+        studentService.deleteStudentRegisterForInstitute(studentId, instituteId);
     }
 
     @GetMapping("/{id}/training-hours")
