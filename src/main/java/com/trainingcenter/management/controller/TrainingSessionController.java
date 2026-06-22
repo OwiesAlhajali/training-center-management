@@ -88,4 +88,15 @@ public class TrainingSessionController {
             @RequestParam String name) {
         return ResponseEntity.ok(sessionService.searchByCourseName(name));
     }
+
+	@GetMapping("/course/{courseId}/institute/{instituteId}/active-upcoming")
+    public ResponseEntity<List<TrainingSessionResponseDTO>> getActiveOrUpcomingByCourseAndInstitute(
+            @PathVariable Long courseId,
+            @PathVariable Long instituteId) {
+
+        List<TrainingSessionResponseDTO> sessions = 
+                sessionService.getActiveOrUpcomingSessionsByCourseAndInstitute(courseId, instituteId);
+
+        return ResponseEntity.ok(sessions);
+	}
 }
