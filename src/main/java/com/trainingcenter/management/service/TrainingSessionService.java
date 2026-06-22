@@ -26,6 +26,7 @@ public class TrainingSessionService {
     private final TeacherRepository teacherRepository;
     private final LectureService lectureService;
     private final ImageService imageService;
+    private final InstituteRepository instituteRepository;   
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
@@ -218,6 +219,30 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
     return mapToResponse(session);
 }
 
+    @Transactional(readOnly = true)
+    public List<TrainingSessionResponseDTO> getActiveOrUpcomingSessionsByCourseAndInstitute(
+            Long courseId, Long instituteId) {
+
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course not found with ID: " + courseId);
+        }
+
+        if (!classRoomRepository.findByInstituteId(instituteId).isEmpty() == false && !instituteRepository.existsById(instituteId)) { 
+            
+            throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
+        }
+
+        List<SessionStatus> statuses = List.of(SessionStatus.ACTIVE, SessionStatus.UPCOMING);
+
+        List<TrainingSession> sessions = sessionRepository
+                .findActiveOrUpcomingByCourseAndInstitute(courseId, instituteId, statuses);
+
+        return sessions.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
     public List<TrainingSessionResponseDTO> searchByCourseName(String courseName) {
         if (courseName == null || courseName.trim().isEmpty()) {
             throw new BadRequestException("Course name cannot be empty");
