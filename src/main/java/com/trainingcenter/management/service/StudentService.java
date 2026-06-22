@@ -10,6 +10,8 @@ import com.trainingcenter.management.entity.AttendanceStatus;
 import com.trainingcenter.management.entity.Lecture;
 import com.trainingcenter.management.entity.Student;
 import com.trainingcenter.management.entity.User;
+import com.trainingcenter.management.entity.Enrollment;
+import com.trainingcenter.management.entity.SessionStatus;
 import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.DuplicateResourceException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
@@ -135,30 +137,35 @@ public class StudentService {
         return mapToResponse(updatedStudent);
     }
  
+    @Transactional
+    public void deleteStudentRegisterForInstitute(Long studentId, Long instituteId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
 
-@Transactional
-public void deleteStudentRegisterForInstitute(Long studentId, Long instituteId) {
-    Student student = studentRepository.findById(studentId)
-            .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+        if (!instituteRepository.existsById(instituteId)) {
+            throw new ResourceNotFoundException("Institute not found with id: " + instituteId);
+        }
 
-    if (!instituteRepository.existsById(instituteId)) { 
-        throw new ResourceNotFoundException("Institute not found with id: " + instituteId);
+        List<Enrollment> enrollmentsInInstitute = enrollmentRepository.findEnrollmentsByStudentAndInstitute(studentId, instituteId);
+
+        boolean hasActiveOrUpcoming = enrollmentsInInstitute.stream()
+                .anyMatch(e -> {
+                    SessionStatus status = e.getTrainingSession().getStatus();
+                    return status == SessionStatus.ACTIVE || status == SessionStatus.UPCOMING;
+                });
+
+        if (hasActiveOrUpcoming) {
+            throw new BadRequestException("Cannot delete register: Student has active or upcoming enrollments in this institute.");
+        }
+
+        Long tenantId = getTenantIdByInstitute(instituteId);
+        registerRepository.deleteByStudentIdAndTenantId(studentId, tenantId);
     }
 
-    List<Enrollment> enrollmentsInInstitute = enrollmentRepository.findEnrollmentsByStudentAndInstitute(studentId, instituteId);
-
-    boolean hasActiveOrUpcoming = enrollmentsInInstitute.stream()
-            .anyMatch(e -> {
-                SessionStatus status = e.getTrainingSession().getStatus();
-                return status == SessionStatus.ACTIVE || status == SessionStatus.UPCOMING;
-            });
-
-    if (hasActiveOrUpcoming) {
-        throw new BadRequestException("Cannot delete register: Student has active or upcoming enrollments in this institute.");
+    // Helper method
+    private Long getTenantIdByInstitute(Long instituteId) {
+        return instituteRepository.findTenantIdByInstituteId(instituteId);
     }
-
-    registerRepository.deleteByStudentIdAndTenantId(studentId, getTenantIdByInstitute(instituteId));
-}
 
     /**
      * Uploads a student profile image and stores the Cloudinary URL in User.image.
