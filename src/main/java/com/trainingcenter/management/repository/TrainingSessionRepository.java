@@ -50,4 +50,18 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
             WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :courseName, '%'))
             """)
     List<TrainingSession> searchByCourseName(@Param("courseName") String courseName);
+
+    @Query("""
+        SELECT ts FROM TrainingSession ts 
+        WHERE ts.course.id = :courseId 
+          AND ts.classRoom.institute.id = :instituteId 
+          AND ts.status IN (:statuses) 
+          AND ts.availableSeats > 0
+        ORDER BY ts.id DESC
+    """)
+    List<TrainingSession> findActiveOrUpcomingByCourseAndInstitute(
+            @Param("courseId") Long courseId,
+            @Param("instituteId") Long instituteId,
+            @Param("statuses") List<SessionStatus> statuses);
+
 }
