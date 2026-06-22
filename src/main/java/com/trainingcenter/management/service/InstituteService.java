@@ -88,6 +88,17 @@ public class InstituteService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+    
+    @Transactional(readOnly = true)
+    public Long getStudentsCountByTenant(Long tenantId) {
+
+          if (!tenantRepository.existsById(tenantId)) {
+                throw new ResourceNotFoundException(
+                "Tenant not found with ID: " + tenantId);
+           }
+
+         return registerRepository.countDistinctByTenantId(tenantId);
+    }
 
     @Transactional
     public InstituteResponseDTO updateInstitute(Long id, InstituteRequestDTO requestDTO) {
