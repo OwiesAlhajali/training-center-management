@@ -26,6 +26,7 @@ public class TrainingSessionService {
     private final TeacherRepository teacherRepository;
     private final LectureService lectureService;
     private final ImageService imageService;
+    private final InstituteRepository instituteRepository;   
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
