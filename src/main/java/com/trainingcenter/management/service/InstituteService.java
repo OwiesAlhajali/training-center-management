@@ -12,6 +12,7 @@ import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.InstituteRepository;
 import com.trainingcenter.management.repository.TenantRepository;
 import com.trainingcenter.management.repository.UserRepository;
+import com.trainingcenter.management.repository.RegisterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class InstituteService {
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final RegisterRepository registerRepository;
 
     @Transactional
     public InstituteResponseDTO createInstitute(InstituteRequestDTO requestDTO) {
