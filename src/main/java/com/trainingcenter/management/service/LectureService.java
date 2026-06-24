@@ -37,13 +37,6 @@ public class LectureService {
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
 
-
-
-
-
-   
-
-
     // Get lectures by session ID
     @Transactional(readOnly = true)
     public List<LectureResponseDTO> getLecturesBySessionId(Long sessionId) {
