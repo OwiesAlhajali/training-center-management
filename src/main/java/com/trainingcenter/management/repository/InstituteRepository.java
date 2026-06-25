@@ -16,18 +16,21 @@ public interface InstituteRepository extends JpaRepository<Institute, Long> {
     Long findTenantIdByInstituteId(@Param("instituteId") Long instituteId);
 
     
-@Query("SELECT COUNT(DISTINCT e.student.id) " +
-       "FROM Enrollment e " +
-       "JOIN e.trainingSession ts " +
-       "JOIN ts.classRoom cr " +
-       "WHERE cr.institute.id = :instituteId")
-long countStudentsByInstitute(@Param("instituteId") Long instituteId);
-    
-@Query("SELECT COUNT(DISTINCT t.id) " +
-       "FROM Teacher t " +
-       "JOIN TrainingSession ts ON ts.teacher.id = t.id " +
-       "JOIN ts.classRoom cr " +
-       "WHERE cr.institute.id = :instituteId")
-long countTeachersByInstitute(@Param("instituteId") Long instituteId);
+@Query("SELECT COUNT(DISTINCT u.id) " +
+       "FROM User u " +
+       "WHERE u.userType IN ('STUDENT', 'TEACHER') " +
+       "AND ( " +
+       "  EXISTS (SELECT 1 FROM Enrollment e " +
+       "           JOIN e.trainingSession ts " +
+       "           JOIN ts.classRoom cr " +
+       "           WHERE e.student.user.id = u.id " +
+       "           AND cr.institute.id = :instituteId) " +
+       "  OR " +
+       "  EXISTS (SELECT 1 FROM TrainingSession ts " +
+       "           JOIN ts.classRoom cr " +
+       "           WHERE ts.teacher.user.id = u.id " +
+       "           AND cr.institute.id = :instituteId) " +
+       ")")
+long countTotalUsersByInstitute(@Param("instituteId") Long instituteId);
     
 }
