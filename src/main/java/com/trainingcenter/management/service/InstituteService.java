@@ -17,6 +17,7 @@ import com.trainingcenter.management.repository.PaymentRepository;
 import com.trainingcenter.management.repository.TenantRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import com.trainingcenter.management.repository.RegisterRepository;
+import com.trainingcenter.management.repository.TrainingSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class InstituteService {
     private final EnrollmentRepository enrollmentRepository;
     private final RegisterRepository registerRepository;
     private final PaymentRepository paymentRepository;
+    private final TrainingSessionRepository sessionRepository;
 
     @Transactional
     public InstituteResponseDTO createInstitute(InstituteRequestDTO requestDTO) {
@@ -175,6 +177,15 @@ public class InstituteService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public long getActiveTrainingSessionsCountByInstitute(Long instituteId) {
+       if (!instituteRepository.existsById(instituteId)) {
+           throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
+       }
+    
+       return sessionRepository.countActiveSessionsByInstitute(instituteId, SessionStatus.ACTIVE);
+    }
+    
     @Transactional(readOnly = true)
     public long getTotalUsersCountByInstitute(Long instituteId) {
         if (!instituteRepository.existsById(instituteId)) {
