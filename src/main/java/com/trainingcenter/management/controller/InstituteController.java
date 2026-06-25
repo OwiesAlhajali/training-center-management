@@ -65,6 +65,11 @@ public class InstituteController {
     public ResponseEntity<List<StudentResponseDTO>> getStudentsByTenant(@PathVariable Long tenantId) {
         return ResponseEntity.ok(instituteService.getStudentsByTenant(tenantId));
     }
+    
+    @GetMapping("/{id}/users/count")
+    public ResponseEntity<Long> getTotalUsersCountByInstitute(@PathVariable Long id) {
+        return ResponseEntity.ok(instituteService.getTotalUsersCountByInstitute(id));
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<InstituteResponseDTO> update(@PathVariable Long id, @Valid @RequestBody InstituteRequestDTO request) {
