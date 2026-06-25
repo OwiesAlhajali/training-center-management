@@ -28,37 +28,31 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
     @Query("SELECT ts FROM TrainingSession ts WHERE ts.id = :id")
     Optional<TrainingSession> findByIdForUpdate(@Param("id") Long id);
 
-    @Query("""
-            SELECT ts.course.id,
-                   ts.course.name,
-                   SUM(CASE WHEN ts.status = :completedStatus THEN 1 ELSE 0 END),
-                   COUNT(ts)
-            FROM TrainingSession ts
-            WHERE ts.teacher.id = :teacherId
-              AND ts.status <> :cancelledStatus
-            GROUP BY ts.course.id, ts.course.name
-            """)
+    @Query("SELECT ts.course.id, " +
+            "ts.course.name, " +
+            "SUM(CASE WHEN ts.status = :completedStatus THEN 1 ELSE 0 END), " +
+            "COUNT(ts) " +
+            "FROM TrainingSession ts " +
+            "WHERE ts.teacher.id = :teacherId " +
+            "AND ts.status <> :cancelledStatus " +
+            "GROUP BY ts.course.id, ts.course.name")
     List<Object[]> getTeacherCourseProgress(@Param("teacherId") Long teacherId,
                                             @Param("completedStatus") SessionStatus completedStatus,
                                             @Param("cancelledStatus") SessionStatus cancelledStatus);
 
     List<TrainingSession> findByStatus(SessionStatus status);
 
-    @Query("""
-            SELECT ts FROM TrainingSession ts
-            JOIN ts.course c
-            WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :courseName, '%'))
-            """)
+    @Query("SELECT ts FROM TrainingSession ts " +
+            "JOIN ts.course c " +
+            "WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :courseName, '%'))")
     List<TrainingSession> searchByCourseName(@Param("courseName") String courseName);
 
-    @Query("""
-        SELECT ts FROM TrainingSession ts 
-        WHERE ts.course.id = :courseId 
-          AND ts.classRoom.institute.id = :instituteId 
-          AND ts.status IN (:statuses) 
-          AND ts.availableSeats > 0
-        ORDER BY ts.id DESC
-    """)
+    @Query("SELECT ts FROM TrainingSession ts " +
+        "WHERE ts.course.id = :courseId " +
+        "AND ts.classRoom.institute.id = :instituteId " +
+        "AND ts.status IN (:statuses) " +
+        "AND ts.availableSeats > 0 " +
+        "ORDER BY ts.id DESC")
     List<TrainingSession> findActiveOrUpcomingByCourseAndInstitute(
             @Param("courseId") Long courseId,
             @Param("instituteId") Long instituteId,
