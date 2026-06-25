@@ -17,17 +17,17 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByStudentAndTrainingSessionAndStatus(Student student, TrainingSession trainingSession, PaymentStatus status);
 
     @Query(value = "SELECT " +
-            "EXTRACT(MONTH FROM p.created_at) AS month, " +
-            "SUM(p.amount) AS total_revenue, " +
-            "COUNT(*) AS total_payments " +
-            "FROM payments p " +
-            "JOIN training_sessions ts ON p.training_session_id = ts.id " +
-            "JOIN classrooms cr ON ts.classroom_id = cr.id " +
-            "WHERE cr.institute_id = :instituteId " +
+            "EXTRACT(MONTH FROM p.createdAt) AS month, " +
+            "SUM(p.amount) AS totalRevenue, " +
+            "COUNT(*) AS totalPayments " +
+            "FROM Payment p " +
+            "JOIN p.trainingSession ts " +
+            "JOIN ts.classRoom cr " +
+            "WHERE cr.institute.id = :instituteId " +
             "AND p.status = 'SUCCEEDED' " +
-            "AND EXTRACT(YEAR FROM p.created_at) = :year " +
-            "GROUP BY EXTRACT(MONTH FROM p.created_at) " +
-            "ORDER BY EXTRACT(MONTH FROM p.created_at)", nativeQuery = true)
+            "AND EXTRACT(YEAR FROM p.createdAt) = :year " +
+            "GROUP BY EXTRACT(MONTH FROM p.createdAt) " +
+            "ORDER BY EXTRACT(MONTH FROM p.createdAt)")
     List<Object[]> getMonthlyFinancialPerformanceByInstituteAndYear(
             @Param("instituteId") Long instituteId,
             @Param("year") Integer year);
