@@ -13,18 +13,16 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByCategoryIdAndTenantId(Long categoryId, Long tenantId);
     List<Course> findByNameContainingIgnoreCaseAndTenantId(String name, Long tenantId);
 
-    @Query("""
-            SELECT c.id,
-                   c.name,
-                   c.description,
-                   c.hours,
-                   c.category.name,
-                   c.tenant.name,
-                   COUNT(ts)
-            FROM TrainingSession ts
-            JOIN ts.course c
-            WHERE ts.status = :status
-            GROUP BY c.id, c.name, c.description, c.hours, c.category.name, c.tenant.name
-            """)
+    @Query("SELECT c.id, " +
+           "c.name, " +
+           "c.description, " +
+           "c.hours, " +
+           "c.category.name, " +
+           "c.tenant.name, " +
+           "COUNT(ts) " +
+           "FROM TrainingSession ts " +
+           "JOIN ts.course c " +
+           "WHERE ts.status = :status " +
+           "GROUP BY c.id, c.name, c.description, c.hours, c.category.name, c.tenant.name")
     List<Object[]> findActiveCourseSummariesBySessionStatus(@Param("status") SessionStatus status);
 }

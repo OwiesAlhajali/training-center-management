@@ -22,24 +22,20 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     @Query("SELECT COUNT(DISTINCT a.lecture.id) FROM Attendance a WHERE a.lecture.trainingSession.id = :sessionId")
     long countTotalProcessedLectures(@Param("sessionId") Long sessionId);
 
-    @Query("""
-            SELECT a FROM Attendance a
-            JOIN FETCH a.lecture l
-            JOIN FETCH l.trainingSession ts
-            JOIN FETCH ts.course c
-            WHERE a.student.id = :studentId AND a.status = :status
-            """)
+    @Query("SELECT a FROM Attendance a " +
+           "JOIN FETCH a.lecture l " +
+           "JOIN FETCH l.trainingSession ts " +
+           "JOIN FETCH ts.course c " +
+           "WHERE a.student.id = :studentId AND a.status = :status")
     List<Attendance> findDetailedByStudentAndStatus(@Param("studentId") Long studentId,
                                                     @Param("status") AttendanceStatus status);
 
-    @Query("""
-            SELECT a.lecture.trainingSession.id,
-                   SUM(CASE WHEN a.status = :presentStatus THEN 1 ELSE 0 END),
-                   COUNT(a)
-            FROM Attendance a
-            WHERE a.student.id = :studentId
-            GROUP BY a.lecture.trainingSession.id
-            """)
+    @Query("SELECT a.lecture.trainingSession.id, " +
+           "SUM(CASE WHEN a.status = :presentStatus THEN 1 ELSE 0 END), " +
+           "COUNT(a) " +
+           "FROM Attendance a " +
+           "WHERE a.student.id = :studentId " +
+           "GROUP BY a.lecture.trainingSession.id")
     List<Object[]> getStudentSessionAttendanceStats(@Param("studentId") Long studentId,
                                                     @Param("presentStatus") AttendanceStatus presentStatus);
 }

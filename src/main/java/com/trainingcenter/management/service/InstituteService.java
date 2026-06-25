@@ -2,14 +2,18 @@ package com.trainingcenter.management.service;
 
 import com.trainingcenter.management.dto.InstituteRequestDTO;
 import com.trainingcenter.management.dto.InstituteResponseDTO;
+import com.trainingcenter.management.dto.MonthlyFinancialPerformanceDTO;
 import com.trainingcenter.management.dto.MonthlyRegistrationStatDTO;
+import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.entity.Institute;
+import com.trainingcenter.management.entity.Student;
 import com.trainingcenter.management.entity.Tenant;
 import com.trainingcenter.management.entity.User;
 import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.InstituteRepository;
+import com.trainingcenter.management.repository.PaymentRepository;
 import com.trainingcenter.management.repository.TenantRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import com.trainingcenter.management.repository.RegisterRepository;
@@ -35,6 +39,7 @@ public class InstituteService {
     private final TenantRepository tenantRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final RegisterRepository registerRepository;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public InstituteResponseDTO createInstitute(InstituteRequestDTO requestDTO) {
@@ -102,6 +107,17 @@ public class InstituteService {
          return registerRepository.countDistinctByTenantId(tenantId);
     }
 
+    @Transactional(readOnly = true)
+    public List<StudentResponseDTO> getStudentsByTenant(Long tenantId) {
+        if (!tenantRepository.existsById(tenantId)) {
+            throw new ResourceNotFoundException("Tenant not found with ID: " + tenantId);
+        }
+
+        return registerRepository.findByTenantId(tenantId).stream()
+                .map(register -> mapStudentToResponse(register.getStudent()))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public InstituteResponseDTO updateInstitute(Long id, InstituteRequestDTO requestDTO) {
         Institute existing = instituteRepository.findById(id)
@@ -159,6 +175,30 @@ public class InstituteService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<MonthlyFinancialPerformanceDTO> getMonthlyFinancialPerformance(Long instituteId, Integer year) {
+        if (!instituteRepository.existsById(instituteId)) {
+            throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
+        }
+
+        int targetYear = (year == null) ? Year.now().getValue() : year;
+        List<Object[]> rows = paymentRepository.getMonthlyFinancialPerformanceByInstituteAndYear(instituteId, targetYear);
+
+        Map<Integer, MonthlyFinancialPerformanceDTO> performanceByMonth = new HashMap<>();
+        for (Object[] row : rows) {
+            Integer month = ((Number) row[0]).intValue();
+            Long totalRevenue = ((Number) row[1]).longValue();
+            Long totalPayments = ((Number) row[2]).longValue();
+            performanceByMonth.put(month, new MonthlyFinancialPerformanceDTO(month, totalRevenue, totalPayments));
+        }
+
+        return java.util.stream.IntStream.rangeClosed(1, 12)
+                .mapToObj(month -> performanceByMonth.getOrDefault(
+                        month,
+                        new MonthlyFinancialPerformanceDTO(month, 0L, 0L)))
+                .toList();
+    }
+
     private InstituteResponseDTO mapToResponse(Institute institute) {
         return InstituteResponseDTO.builder()
                 .id(institute.getId())
@@ -175,6 +215,26 @@ public class InstituteService {
                 .ownerName(institute.getUser() != null ? institute.getUser().getUsername() : "No Owner")
                 .tenantId(institute.getTenant() != null ? institute.getTenant().getId() : null)
                 .tenantName(institute.getTenant() != null ? institute.getTenant().getName() : "No Tenant")
+                .build();
+    }
+
+    private StudentResponseDTO mapStudentToResponse(Student student) {
+        User user = student.getUser();
+        return StudentResponseDTO.builder()
+                .id(student.getId())
+                .firstName(student.getFirstName())
+                .lastName(student.getLastName())
+                .gender(student.getGender())
+                .birthDate(student.getBirthDate())
+                .enrollmentDate(student.getEnrollmentDate())
+                .address(student.getAddress())
+                .bio(student.getBio())
+                .interest(student.getInterest())
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .contactInfo(user.getContactInfo())
+                .image(user.getImage())
                 .build();
     }
 
