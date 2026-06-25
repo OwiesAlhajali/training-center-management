@@ -58,4 +58,11 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
             @Param("instituteId") Long instituteId,
             @Param("statuses") List<SessionStatus> statuses);
 
+    @Query("SELECT COUNT(ts) FROM TrainingSession ts " +
+       "JOIN ts.classRoom cr " +
+       "WHERE cr.institute.id = :instituteId " +
+       "AND ts.status = :status")
+    long countActiveSessionsByInstitute(@Param("instituteId") Long instituteId, 
+                                        @Param("status") SessionStatus status);
+
 }
