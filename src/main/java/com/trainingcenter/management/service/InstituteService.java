@@ -176,6 +176,15 @@ public class InstituteService {
     }
 
     @Transactional(readOnly = true)
+    public long getTotalUsersCountByInstitute(Long instituteId) {
+        if (!instituteRepository.existsById(instituteId)) {
+            throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
+        }
+    
+       return instituteRepository.countTotalUsersByInstitute(instituteId);
+    }
+
+    @Transactional(readOnly = true)
     public List<MonthlyFinancialPerformanceDTO> getMonthlyFinancialPerformance(Long instituteId, Integer year) {
         if (!instituteRepository.existsById(instituteId)) {
             throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
