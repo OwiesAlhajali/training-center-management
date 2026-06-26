@@ -18,7 +18,7 @@ public class UserDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        createIfMissing("admin", "admin@trainingcenter.com", "Admin@123", User.UserType.ADMIN);
+        createIfMissing("admin", "Hevadmin@gmail.com", "heveano$@12", User.UserType.ADMIN);
         createIfMissing("student", "student@trainingcenter.com", "Student@123", User.UserType.STUDENT);
         createIfMissing("teacher", "teacher@trainingcenter.com", "Teacher@123", User.UserType.TEACHER);
     }
