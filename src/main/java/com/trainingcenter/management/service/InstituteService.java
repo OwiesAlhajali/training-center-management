@@ -9,6 +9,8 @@ import com.trainingcenter.management.entity.Institute;
 import com.trainingcenter.management.entity.Student;
 import com.trainingcenter.management.entity.Tenant;
 import com.trainingcenter.management.entity.User;
+import com.trainingcenter.management.entity.InstituteStatus;
+import com.trainingcenter.management.entity.SessionStatus;  
 import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.EnrollmentRepository;
