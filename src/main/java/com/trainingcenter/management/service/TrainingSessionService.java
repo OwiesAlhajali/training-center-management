@@ -26,15 +26,15 @@ public class TrainingSessionService {
     private final TeacherRepository teacherRepository;
     private final LectureService lectureService;
     private final ImageService imageService;
-    private final InstituteRepository instituteRepository;   
+    private final InstituteRepository instituteRepository;
 
 
     public TrainingSessionResponseDTO getSessionById(Long id) {
         TrainingSession session = sessionRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
-       return mapToResponse(session);
+                .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
+        return mapToResponse(session);
     }
-  
+
 
     public List<TrainingSessionResponseDTO> getAllSessions() {
         return sessionRepository.findAll().stream()
@@ -43,11 +43,11 @@ public class TrainingSessionService {
     }
 
     public List<TrainingSessionResponseDTO> getSessionsWithFilters(String category,
-                                                                   String courseName,
-                                                                   String instituteName,
-                                                                   BigDecimal minPrice,
-                                                                   BigDecimal maxPrice,
-                                                                   String location) {
+                                                                    String courseName,
+                                                                    String instituteName,
+                                                                    BigDecimal minPrice,
+                                                                    BigDecimal maxPrice,
+                                                                    String location) {
         if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
             throw new BadRequestException("Invalid price range: minPrice cannot be greater than maxPrice");
         }
@@ -67,7 +67,6 @@ public class TrainingSessionService {
             }
         }
 
-        // Build the dynamic Specification
         Specification<TrainingSession> spec = TrainingSessionSpecification.withFilters(
                 categoryId,
                 categoryName,
@@ -103,121 +102,112 @@ public class TrainingSessionService {
     }
 
 
-    //method to validate session capacity 
-
+    // Validate that the requested seats do not exceed the classroom capacity
     private void validateSessionCapacity(Integer requestedSeats, Long classroomId) {
         ClassRoom classroom = classRoomRepository.findById(classroomId)
-            .orElseThrow(() -> new ResourceNotFoundException("Classroom not found with ID: " + classroomId));
-            
+                .orElseThrow(() -> new ResourceNotFoundException("Classroom not found with ID: " + classroomId));
+
         if (requestedSeats > classroom.getCapacity()) {
-        throw new BadRequestException("Capacity Conflict: Requested seats (" + requestedSeats + 
-                ") exceed classroom capacity (" + classroom.getCapacity() + ") for room: " + classroom.getNumber());
-       }
+            throw new BadRequestException("Capacity Conflict: Requested seats (" + requestedSeats +
+                    ") exceed classroom capacity (" + classroom.getCapacity() +
+                    ") for room: " + classroom.getNumber());
+        }
     }
-    
+
     @Transactional
     public TrainingSessionResponseDTO createSession(TrainingSessionRequestDTO requestDTO) {
 
-    validateSessionCapacity(requestDTO.getAvailableSeats(), requestDTO.getClassroomId());
+        validateSessionCapacity(requestDTO.getAvailableSeats(), requestDTO.getClassroomId());
 
-    Course course = courseRepository.findById(requestDTO.getCourseId())
-            .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
-    ClassRoom classroom = classRoomRepository.findById(requestDTO.getClassroomId()).get();
-    Teacher teacher = teacherRepository.findById(requestDTO.getTeacherId())
-            .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
+        Course course = courseRepository.findById(requestDTO.getCourseId())
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
-TrainingSession session = TrainingSession.builder()
-            .price(requestDTO.getPrice())
-            .availableSeats(requestDTO.getAvailableSeats())
-            .minSeats(requestDTO.getMinSeats())
-            .numberOfLectures(requestDTO.getNumberOfLectures())
-            .status(requestDTO.getStatus())
-            .course(course)
-            .classRoom(classroom)
-            .teacher(teacher)
-            .requiredEquipment(requestDTO.getRequiredEquipment())
-            .build();
+        ClassRoom classroom = classRoomRepository.findById(requestDTO.getClassroomId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Classroom not found with ID: " + requestDTO.getClassroomId()));
 
-    TrainingSession savedSession = sessionRepository.save(session);
+        Teacher teacher = teacherRepository.findById(requestDTO.getTeacherId())
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found"));
 
-   if (requestDTO.getStartDate() != null && requestDTO.getDaysOfWeek() != null) {
-        lectureService.generateAutoLectures(savedSession, requestDTO.getStartDate(), 
-                                           requestDTO.getStartTime(), requestDTO.getEndTime(), 
-                                           requestDTO.getDaysOfWeek());
+        TrainingSession session = TrainingSession.builder()
+                .price(requestDTO.getPrice())
+                .availableSeats(requestDTO.getAvailableSeats())
+                .minSeats(requestDTO.getMinSeats())
+                .numberOfLectures(requestDTO.getNumberOfLectures())
+                .status(requestDTO.getStatus())
+                .course(course)
+                .classRoom(classroom)
+                .teacher(teacher)
+                .requiredEquipment(requestDTO.getRequiredEquipment())
+                .build();
+
+        TrainingSession savedSession = sessionRepository.save(session);
+
+        if (requestDTO.getStartDate() != null && requestDTO.getDaysOfWeek() != null) {
+            lectureService.generateAutoLectures(savedSession, requestDTO.getStartDate(),
+                    requestDTO.getStartTime(), requestDTO.getEndTime(),
+                    requestDTO.getDaysOfWeek());
+        }
+
+        return mapToResponse(savedSession);
     }
 
-    return mapToResponse(savedSession);
+    @Transactional
+    public TrainingSessionResponseDTO updateSession(Long id, TrainingSessionRequestDTO requestDTO) {
+        TrainingSession existingSession = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
 
+        existingSession.setPrice(requestDTO.getPrice());
+        existingSession.setAvailableSeats(requestDTO.getAvailableSeats());
+        existingSession.setMinSeats(requestDTO.getMinSeats());
+        existingSession.setNumberOfLectures(requestDTO.getNumberOfLectures());
+        existingSession.setStatus(requestDTO.getStatus());
+        existingSession.setRequiredEquipment(requestDTO.getRequiredEquipment());
 
+        if (!existingSession.getClassRoom().getId().equals(requestDTO.getClassroomId())) {
+            existingSession.setClassRoom(classRoomRepository.findById(requestDTO.getClassroomId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Classroom not found")));
+        }
+
+        if (!existingSession.getTeacher().getId().equals(requestDTO.getTeacherId())) {
+            existingSession.setTeacher(teacherRepository.findById(requestDTO.getTeacherId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Teacher not found")));
+        }
+
+        if (requestDTO.getStartDate() != null && requestDTO.getDaysOfWeek() != null) {
+            lectureService.removeLecturesBySession(id);
+            lectureService.generateAutoLectures(
+                    existingSession,
+                    requestDTO.getStartDate(),
+                    requestDTO.getStartTime(),
+                    requestDTO.getEndTime(),
+                    requestDTO.getDaysOfWeek()
+            );
+        }
+
+        return mapToResponse(sessionRepository.save(existingSession));
     }
 
-@Transactional
-public TrainingSessionResponseDTO updateSession(Long id, TrainingSessionRequestDTO requestDTO) {
-    TrainingSession existingSession = sessionRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
+    @Transactional
+    public void deleteSession(Long id) {
+        TrainingSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
 
-    
-    existingSession.setPrice(requestDTO.getPrice());
-    existingSession.setAvailableSeats(requestDTO.getAvailableSeats());
-    existingSession.setMinSeats(requestDTO.getMinSeats());
-    existingSession.setNumberOfLectures(requestDTO.getNumberOfLectures());
-    existingSession.setStatus(requestDTO.getStatus());
-    existingSession.setRequiredEquipment(requestDTO.getRequiredEquipment());
-
-    
-    if (!existingSession.getClassRoom().getId().equals(requestDTO.getClassroomId())) {
-        existingSession.setClassRoom(classRoomRepository.findById(requestDTO.getClassroomId())
-                .orElseThrow(() -> new ResourceNotFoundException("Classroom not found")));
-    }
-    
-    if (!existingSession.getTeacher().getId().equals(requestDTO.getTeacherId())) {
-        existingSession.setTeacher(teacherRepository.findById(requestDTO.getTeacherId())
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found")));
-    }
-
-    
-    
-    if (requestDTO.getStartDate() != null && requestDTO.getDaysOfWeek() != null) {
-    
         lectureService.removeLecturesBySession(id);
-        
-    
-        lectureService.generateAutoLectures(
-            existingSession, 
-            requestDTO.getStartDate(), 
-            requestDTO.getStartTime(), 
-            requestDTO.getEndTime(), 
-            requestDTO.getDaysOfWeek()
-        );
+        sessionRepository.delete(session);
     }
 
-    return mapToResponse(sessionRepository.save(existingSession));
-}
+    @Transactional
+    public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframework.web.multipart.MultipartFile file) {
+        TrainingSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
 
-@Transactional
-public void deleteSession(Long id) {
-    
-    TrainingSession session = sessionRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
+        String imageUrl = imageService.uploadImage(file);
+        session.setImage(imageUrl);
+        sessionRepository.save(session);
 
-    
-    lectureService.removeLecturesBySession(id);
-
-    
-    sessionRepository.delete(session);
-}
-
-@Transactional
-public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframework.web.multipart.MultipartFile file) {
-    TrainingSession session = sessionRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found with ID: " + id));
-
-    String imageUrl = imageService.uploadImage(file);
-    session.setImage(imageUrl);
-    sessionRepository.save(session);
-
-    return mapToResponse(session);
-}
+        return mapToResponse(session);
+    }
 
     @Transactional(readOnly = true)
     public List<TrainingSessionResponseDTO> getActiveOrUpcomingSessionsByCourseAndInstitute(
@@ -227,8 +217,7 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
             throw new ResourceNotFoundException("Course not found with ID: " + courseId);
         }
 
-        if (!classRoomRepository.findByInstituteId(instituteId).isEmpty() == false && !instituteRepository.existsById(instituteId)) { 
-            
+        if (!instituteRepository.existsById(instituteId)) {
             throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
         }
 
@@ -241,7 +230,7 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional(readOnly = true)
     public List<TrainingSessionResponseDTO> searchByCourseName(String courseName) {
         if (courseName == null || courseName.trim().isEmpty()) {
@@ -274,10 +263,13 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
                 .courseName(session.getCourse().getName())
                 .courseDescription(session.getCourse().getDescription())
                 .classroomName(session.getClassRoom().getNumber())
-                .teacherName(session.getTeacher() != null && session.getTeacher().getUser() != null ? session.getTeacher().getUser().getUsername() : null)
+                .teacherName(session.getTeacher() != null && session.getTeacher().getUser() != null
+                        ? session.getTeacher().getUser().getUsername() : null)
                 .teacherId(session.getTeacher() != null ? session.getTeacher().getId() : null)
-                .instituteName(session.getClassRoom().getInstitute() != null ? session.getClassRoom().getInstitute().getName() : null)
-                .instituteId(session.getClassRoom().getInstitute() != null ? session.getClassRoom().getInstitute().getId() : null)
+                .instituteName(session.getClassRoom().getInstitute() != null
+                        ? session.getClassRoom().getInstitute().getName() : null)
+                .instituteId(session.getClassRoom().getInstitute() != null
+                        ? session.getClassRoom().getInstitute().getId() : null)
                 .image(session.getImage())
                 .build();
     }
