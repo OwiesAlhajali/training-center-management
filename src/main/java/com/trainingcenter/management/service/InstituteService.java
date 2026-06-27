@@ -17,6 +17,7 @@ import com.trainingcenter.management.repository.PaymentRepository;
 import com.trainingcenter.management.repository.TenantRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import com.trainingcenter.management.repository.RegisterRepository;
+import com.trainingcenter.management.repository.TrainingSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -40,33 +41,50 @@ public class InstituteService {
     private final EnrollmentRepository enrollmentRepository;
     private final RegisterRepository registerRepository;
     private final PaymentRepository paymentRepository;
+    private final TrainingSessionRepository sessionRepository;
 
     @Transactional
     public InstituteResponseDTO createInstitute(InstituteRequestDTO requestDTO) {
-        User user = userRepository.findById(requestDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + requestDTO.getUserId()));
+       User user = userRepository.findById(requestDTO.getUserId())
+               .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + requestDTO.getUserId()));
 
-        Tenant tenant = tenantRepository.findById(requestDTO.getTenantId())
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + requestDTO.getTenantId()));
+   
+       Tenant tenant = new Tenant();
+    
+ 
+       String instituteName = requestDTO.getName().trim();
+       String[] words = instituteName.split("\\s+");
+       String tenantName = (words.length >= 2) ? words[0] + " " + words[1]  : instituteName;
 
-        validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
+       tenant.setName(tenantName);
+       tenant.setAddress(requestDTO.getLocation());  
 
-        Institute institute = Institute.builder()
-            .name(requestDTO.getName())
-            .description(requestDTO.getDescription())
-            .location(requestDTO.getLocation())
-            .phoneNumber(requestDTO.getPhoneNumber())
-            .email(requestDTO.getEmail())
-            .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
-            .startTime(requestDTO.getStartTime())
-            .endTime(requestDTO.getEndTime())
-            .status(requestDTO.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : requestDTO.getStatus())
-            .user(user)
-            .tenant(tenant)
-            .build();
+ 
+       Tenant savedTenant = tenantRepository.save(tenant);
 
-        return mapToResponse(instituteRepository.save(institute));
-    }
+  
+       savedTenant.setKey("key" + savedTenant.getId());
+       tenantRepository.save(savedTenant); 
+
+   
+       validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
+
+       Institute institute = Institute.builder()
+           .name(requestDTO.getName())
+           .description(requestDTO.getDescription())
+           .location(requestDTO.getLocation())
+           .phoneNumber(requestDTO.getPhoneNumber())
+           .email(requestDTO.getEmail())
+           .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
+           .startTime(requestDTO.getStartTime())
+           .endTime(requestDTO.getEndTime())
+           .status(requestDTO.getStatus() == null ? InstituteStatus.ACTIVE : requestDTO.getStatus())
+           .user(user)
+           .tenant(savedTenant)         
+           .build();
+
+       return mapToResponse(instituteRepository.save(institute));
+   }
 
   @Transactional(readOnly = true)
   public List<InstituteResponseDTO> getInstitutesByUser(Long userId) {
@@ -173,6 +191,24 @@ public class InstituteService {
                         .registrations(countsByMonth.getOrDefault(month, 0L))
                         .build())
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public long getActiveTrainingSessionsCountByInstitute(Long instituteId) {
+       if (!instituteRepository.existsById(instituteId)) {
+           throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
+       }
+    
+       return sessionRepository.countActiveSessionsByInstitute(instituteId, SessionStatus.ACTIVE);
+    }
+    
+    @Transactional(readOnly = true)
+    public long getTotalUsersCountByInstitute(Long instituteId) {
+        if (!instituteRepository.existsById(instituteId)) {
+            throw new ResourceNotFoundException("Institute not found with ID: " + instituteId);
+        }
+    
+       return instituteRepository.countTotalUsersByInstitute(instituteId);
     }
 
     @Transactional(readOnly = true)

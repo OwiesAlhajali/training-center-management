@@ -41,6 +41,16 @@ public class LoginController {
                 .message("Login successful")
                 .build();
 
+        if (user.getUserType() == User.UserType.STUDENT) {
+            studentRepository.findByUser(user)
+                    .ifPresent(student -> builder.studentId(student.getId()));
+        } 
+        else if (user.getUserType() == User.UserType.TEACHER) {
+          
+            teacherRepository.findByUser(user)  
+                    .ifPresent(teacher -> builder.teacherId(teacher.getId()));
+        }
+
         return ResponseEntity.ok(response);
     }
 }
