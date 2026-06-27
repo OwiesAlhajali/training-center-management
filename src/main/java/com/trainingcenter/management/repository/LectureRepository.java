@@ -13,31 +13,35 @@ import java.util.List;
 @Repository
 public interface LectureRepository extends JpaRepository<Lecture, Long> {
 
-  
     @Query("SELECT COUNT(l) > 0 FROM Lecture l WHERE l.classRoom.id = :roomId " +
            "AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime)")
-    boolean existsConflict(@Param("roomId") Long roomId, @Param("date") LocalDate date, 
-                          @Param("start") LocalTime start, @Param("end") LocalTime end);
+    boolean existsConflict(@Param("roomId") Long roomId,
+                           @Param("date") LocalDate date,
+                           @Param("start") LocalTime start,
+                           @Param("end") LocalTime end);
 
- 
     @Query("SELECT COUNT(l) > 0 FROM Lecture l WHERE l.teacher.id = :teacherId " +
            "AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime)")
-    boolean isTeacherBusy(@Param("teacherId") Long teacherId, @Param("date") LocalDate date, 
-                         @Param("start") LocalTime start, @Param("end") LocalTime end);
+    boolean isTeacherBusy(@Param("teacherId") Long teacherId,
+                          @Param("date") LocalDate date,
+                          @Param("start") LocalTime start,
+                          @Param("end") LocalTime end);
 
-
-	@Query("SELECT r FROM ClassRoom r WHERE r.capacity >= :minSeats " +
-       "AND (:requiredDevice IS NULL OR LOWER(r.availableDevices) LIKE LOWER(CONCAT('%', :requiredDevice, '%'))) " +
-       "AND NOT EXISTS (SELECT l FROM Lecture l WHERE l.classRoom.id = r.id " +
-       "AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime))")
+    @Query("SELECT r FROM ClassRoom r " +
+           "WHERE r.institute.id = :instituteId " +
+           "AND r.capacity >= :minSeats " +
+           "AND (:requiredDevice IS NULL OR :requiredDevice = '' " +
+           "     OR LOWER(r.availableDevices) LIKE LOWER(CONCAT('%', :requiredDevice, '%'))) " +
+           "AND NOT EXISTS (SELECT l FROM Lecture l WHERE l.classRoom.id = r.id " +
+           "    AND l.lectureDate = :date AND (:start < l.endTime AND :end > l.startTime))")
     List<ClassRoom> findAvailableRoomsWithFeatures(
-        @Param("minSeats") Integer minSeats,
-        @Param("requiredDevice") String requiredDevice,
-        @Param("date") LocalDate date,
-        @Param("start") LocalTime start,
-        @Param("end") LocalTime end
+            @Param("instituteId") Long instituteId,
+            @Param("minSeats") Integer minSeats,
+            @Param("requiredDevice") String requiredDevice,
+            @Param("date") LocalDate date,
+            @Param("start") LocalTime start,
+            @Param("end") LocalTime end
     );
-
 
     List<Lecture> findByTrainingSession_Id(Long sessionId);
 
