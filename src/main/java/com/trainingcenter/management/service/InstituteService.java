@@ -45,30 +45,46 @@ public class InstituteService {
 
     @Transactional
     public InstituteResponseDTO createInstitute(InstituteRequestDTO requestDTO) {
-        User user = userRepository.findById(requestDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + requestDTO.getUserId()));
+       User user = userRepository.findById(requestDTO.getUserId())
+               .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + requestDTO.getUserId()));
 
-        Tenant tenant = tenantRepository.findById(requestDTO.getTenantId())
-                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + requestDTO.getTenantId()));
+   
+       Tenant tenant = new Tenant();
+    
+ 
+       String instituteName = requestDTO.getName().trim();
+       String[] words = instituteName.split("\\s+");
+       String tenantName = (words.length >= 2) ? words[0] + " " + words[1]  : instituteName;
 
-        validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
+       tenant.setName(tenantName);
+       tenant.setAddress(requestDTO.getLocation());  
 
-        Institute institute = Institute.builder()
-            .name(requestDTO.getName())
-            .description(requestDTO.getDescription())
-            .location(requestDTO.getLocation())
-            .phoneNumber(requestDTO.getPhoneNumber())
-            .email(requestDTO.getEmail())
-            .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
-            .startTime(requestDTO.getStartTime())
-            .endTime(requestDTO.getEndTime())
-            .status(requestDTO.getStatus() == null ? com.trainingcenter.management.entity.InstituteStatus.ACTIVE : requestDTO.getStatus())
-            .user(user)
-            .tenant(tenant)
-            .build();
+ 
+       Tenant savedTenant = tenantRepository.save(tenant);
 
-        return mapToResponse(instituteRepository.save(institute));
-    }
+  
+       savedTenant.setKey("key" + savedTenant.getId());
+       tenantRepository.save(savedTenant); 
+
+   
+       validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
+
+       Institute institute = Institute.builder()
+           .name(requestDTO.getName())
+           .description(requestDTO.getDescription())
+           .location(requestDTO.getLocation())
+           .phoneNumber(requestDTO.getPhoneNumber())
+           .email(requestDTO.getEmail())
+           .workingDays(requestDTO.getWorkingDays() == null ? List.of() : requestDTO.getWorkingDays())
+           .startTime(requestDTO.getStartTime())
+           .endTime(requestDTO.getEndTime())
+           .status(requestDTO.getStatus() == null ? InstituteStatus.ACTIVE : requestDTO.getStatus())
+           .user(user)
+           .tenant(savedTenant)         
+           .build();
+
+       return mapToResponse(instituteRepository.save(institute));
+   }
 
   @Transactional(readOnly = true)
   public List<InstituteResponseDTO> getInstitutesByUser(Long userId) {
