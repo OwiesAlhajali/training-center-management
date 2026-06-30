@@ -33,6 +33,9 @@ public class TrainingSession {
     private String requiredEquipment;
 
     private String image;
+    
+    @Column(name = "start_date")
+    private LocalDate startDate;
      
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
