@@ -280,6 +280,7 @@ public class TrainingSessionService {
                 .startDate(session.getStartDate())
                 .courseId(session.getCourse().getId())
                 .courseName(session.getCourse().getName())
+                .classroomId(session.getClassRoom().getId())
                 .courseDescription(session.getCourse().getDescription())
                 .classroomName(session.getClassRoom().getNumber())
                 .teacherName(session.getTeacher() != null && session.getTeacher().getUser() != null
