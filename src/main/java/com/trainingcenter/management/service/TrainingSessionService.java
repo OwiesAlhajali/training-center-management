@@ -164,6 +164,7 @@ public class TrainingSessionService {
         existingSession.setMinSeats(requestDTO.getMinSeats());
         existingSession.setNumberOfLectures(requestDTO.getNumberOfLectures());
         existingSession.setStatus(requestDTO.getStatus());
+        existingSession.setStartDate(requestDTO.getStartDate());
         existingSession.setRequiredEquipment(requestDTO.getRequiredEquipment());
 
         if (!existingSession.getClassRoom().getId().equals(requestDTO.getClassroomId())) {
