@@ -136,6 +136,7 @@ public class TrainingSessionService {
                 .minSeats(requestDTO.getMinSeats())
                 .numberOfLectures(requestDTO.getNumberOfLectures())
                 .status(requestDTO.getStatus())
+                .startDate(requestDTO.getStartDate())
                 .course(course)
                 .classRoom(classroom)
                 .teacher(teacher)
