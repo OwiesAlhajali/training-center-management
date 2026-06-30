@@ -1,5 +1,6 @@
 package com.trainingcenter.management.controller;
 
+import com.trainingcenter.management.dto.TeacherLectureCountDTO;
 import com.trainingcenter.management.dto.TeacherRequestDTO;
 import com.trainingcenter.management.dto.TeacherResponseDTO;
 import com.trainingcenter.management.dto.TeacherCourseProgressDTO;
@@ -79,6 +80,11 @@ public class TeacherController {
     @GetMapping("/{id}/weekly-schedule")
     public ResponseEntity<List<WeeklyScheduleItemDTO>> getTeacherWeeklySchedule(@PathVariable Long id) {
         return ResponseEntity.ok(teacherService.getTeacherWeeklySchedule(id));
+    }
+
+    @GetMapping("/{id}/lecture-count")
+    public ResponseEntity<TeacherLectureCountDTO> getTeacherLectureCount(@PathVariable Long id) {
+        return ResponseEntity.ok(teacherService.getTeacherLectureCount(id));
     }
 
     /**
