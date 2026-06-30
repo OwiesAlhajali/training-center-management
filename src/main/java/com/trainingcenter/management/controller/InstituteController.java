@@ -2,7 +2,9 @@ package com.trainingcenter.management.controller;
 
 import com.trainingcenter.management.dto.InstituteRequestDTO;
 import com.trainingcenter.management.dto.InstituteResponseDTO;
+import com.trainingcenter.management.dto.MonthlyFinancialPerformanceDTO;
 import com.trainingcenter.management.dto.MonthlyRegistrationStatDTO;
+import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.service.InstituteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +31,11 @@ public class InstituteController {
         return ResponseEntity.ok(instituteService.getInstituteById(id));
     }
 
-    @GetMapping("/tenant/{tenantId}")
-    public ResponseEntity<List<InstituteResponseDTO>> getByTenant(@PathVariable Long tenantId) {
-        return ResponseEntity.ok(instituteService.getInstitutesByTenant(tenantId));
-    }
+    
+   @GetMapping("/user/{userId}")
+   public ResponseEntity<List<InstituteResponseDTO>> getByUser(@PathVariable Long userId) {
+       return ResponseEntity.ok(instituteService.getInstitutesByUser(userId));
+   }
 
     @GetMapping
     public ResponseEntity<List<InstituteResponseDTO>> getAll() {
@@ -44,6 +47,33 @@ public class InstituteController {
             @PathVariable Long id,
             @RequestParam(required = false) Integer year) {
         return ResponseEntity.ok(instituteService.getMonthlyRegistrations(id, year));
+    }
+
+    @GetMapping("/{id}/financial-monthly")
+    public ResponseEntity<List<MonthlyFinancialPerformanceDTO>> getMonthlyFinancialPerformance(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(instituteService.getMonthlyFinancialPerformance(id, year));
+    }
+
+    @GetMapping("/tenant/{tenantId}/students-count")
+    public ResponseEntity<Long> getStudentsCountByTenant(@PathVariable Long tenantId) {
+        return ResponseEntity.ok(instituteService.getStudentsCountByTenant(tenantId));
+    }
+
+    @GetMapping("/tenant/{tenantId}/students")
+    public ResponseEntity<List<StudentResponseDTO>> getStudentsByTenant(@PathVariable Long tenantId) {
+        return ResponseEntity.ok(instituteService.getStudentsByTenant(tenantId));
+    }
+    
+    @GetMapping("/{id}/users/count")
+    public ResponseEntity<Long> getTotalUsersCountByInstitute(@PathVariable Long id) {
+        return ResponseEntity.ok(instituteService.getTotalUsersCountByInstitute(id));
+    }
+
+    @GetMapping("/{id}/training-sessions/active/count")
+    public ResponseEntity<Long> getActiveTrainingSessionsCountByInstitute(@PathVariable Long id) {
+        return ResponseEntity.ok(instituteService.getActiveTrainingSessionsCountByInstitute(id));
     }
 
     @PutMapping("/{id}")

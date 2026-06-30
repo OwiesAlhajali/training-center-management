@@ -14,5 +14,8 @@ public class LoginResponseDTO {
     private String email;
     private User.UserType userType;
     private String message;
+
+    private Long studentId; 
+    private Long teacherId;
 }
 

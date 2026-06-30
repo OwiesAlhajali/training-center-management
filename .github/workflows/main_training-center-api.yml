@@ -60,4 +60,5 @@ jobs:
           app-name: 'training-center-api'
           slot-name: 'Production'
           package: '*.jar'
+
           

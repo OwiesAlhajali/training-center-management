@@ -10,6 +10,8 @@ import com.trainingcenter.management.entity.AttendanceStatus;
 import com.trainingcenter.management.entity.Lecture;
 import com.trainingcenter.management.entity.Student;
 import com.trainingcenter.management.entity.User;
+import com.trainingcenter.management.entity.Enrollment;
+import com.trainingcenter.management.entity.SessionStatus;
 import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.DuplicateResourceException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
@@ -17,6 +19,9 @@ import com.trainingcenter.management.repository.AttendanceRepository;
 import com.trainingcenter.management.repository.LectureRepository;
 import com.trainingcenter.management.repository.StudentRepository;
 import com.trainingcenter.management.repository.UserRepository;
+import com.trainingcenter.management.repository.EnrollmentRepository;
+import com.trainingcenter.management.repository.InstituteRepository;
+import com.trainingcenter.management.repository.RegisterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +39,9 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final InstituteRepository instituteRepository; 
+    private final EnrollmentRepository enrollmentRepository;  
+    private final RegisterRepository registerRepository;     
     private final PasswordEncoder passwordEncoder;
     private final AttendanceRepository attendanceRepository;
     private final LectureRepository lectureRepository;
@@ -136,13 +144,35 @@ public class StudentService {
         Student updatedStudent = studentRepository.save(student);
         return mapToResponse(updatedStudent);
     }
+ 
+    @Transactional
+    public void deleteStudentRegisterForInstitute(Long studentId, Long instituteId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
 
-    public void deleteStudent(Long id) {
+        if (!instituteRepository.existsById(instituteId)) {
+            throw new ResourceNotFoundException("Institute not found with id: " + instituteId);
+        }
 
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+        List<Enrollment> enrollmentsInInstitute = enrollmentRepository.findEnrollmentsByStudentAndInstitute(studentId, instituteId);
 
-        studentRepository.delete(student);
+        boolean hasActiveOrUpcoming = enrollmentsInInstitute.stream()
+                .anyMatch(e -> {
+                    SessionStatus status = e.getTrainingSession().getStatus();
+                    return status == SessionStatus.ACTIVE || status == SessionStatus.UPCOMING;
+                });
+
+        if (hasActiveOrUpcoming) {
+            throw new BadRequestException("Cannot delete register: Student has active or upcoming enrollments in this institute.");
+        }
+
+        Long tenantId = getTenantIdByInstitute(instituteId);
+        registerRepository.deleteByStudentIdAndTenantId(studentId, tenantId);
+    }
+
+    // Helper method
+    private Long getTenantIdByInstitute(Long instituteId) {
+        return instituteRepository.findTenantIdByInstituteId(instituteId);
     }
 
     /**
