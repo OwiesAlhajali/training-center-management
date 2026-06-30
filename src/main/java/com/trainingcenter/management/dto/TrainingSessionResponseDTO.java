@@ -4,6 +4,7 @@ import com.trainingcenter.management.entity.SessionStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -19,6 +20,7 @@ public class TrainingSessionResponseDTO {
     private Long courseId;
     private String courseName;
     private String courseDescription;
+    private LocalDate startDate;
     private String classroomName;
     private String teacherName;
     private Long teacherId;
