@@ -275,6 +275,7 @@ public class TrainingSessionService {
                 .requiredEquipment(session.getRequiredEquipment())
                 .duration(session.getDuration())
                 .status(session.getStatus())
+                .startDate(session.getStartDate())
                 .courseId(session.getCourse().getId())
                 .courseName(session.getCourse().getName())
                 .courseDescription(session.getCourse().getDescription())
