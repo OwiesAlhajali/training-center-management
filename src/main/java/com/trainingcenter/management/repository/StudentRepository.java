@@ -11,14 +11,10 @@ import java.util.Optional;
 
 
 public interface StudentRepository extends JpaRepository<Student,Long> {
-    boolean existsByUserId(Long Id) ;
-    Student findByUser(User user);
+    boolean existsByUserId(Long id);
 
     @Query("SELECT s FROM Student s JOIN s.user u WHERE u.username LIKE %:keyword% OR s.firstName LIKE %:keyword% OR s.lastName LIKE %:keyword%")
     List<Student> searchByUsernameOrName(@Param("keyword") String keyword);
-
-
-    boolean existsByUserId(Long id);
 
     Optional<Student> findByUser(User user);
 

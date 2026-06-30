@@ -22,6 +22,7 @@ public class TrainingSessionResponseDTO {
     private String courseDescription;
     private LocalDate startDate;
     private String classroomName;
+    private Long classroomId;
     private String teacherName;
     private Long teacherId;
     private String instituteName;

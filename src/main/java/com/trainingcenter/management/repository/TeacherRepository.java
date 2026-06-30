@@ -10,15 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 
-
-
 public interface TeacherRepository extends JpaRepository<Teacher,Long> {
-    boolean existsByUserId (Long id) ;
+    boolean existsByUserId(Long id);
 
     @Query("SELECT t FROM Teacher t JOIN t.user u WHERE u.username LIKE %:keyword% OR t.firstName LIKE %:keyword% OR t.lastName LIKE %:keyword%")
     List<Teacher> searchByUsernameOrName(@Param("keyword") String keyword);
-
-    boolean existsByUserId(Long id);
 
     Optional<Teacher> findByUser(User user);
 
