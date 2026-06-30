@@ -40,6 +40,11 @@ public class TeacherController {
         return ResponseEntity.ok(teacherService.getAllTeachers());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<TeacherResponseDTO>> searchTeachers(@RequestParam String q) {
+        return ResponseEntity.ok(teacherService.searchTeachers(q));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TeacherResponseDTO> getTeacherById(
             @PathVariable Long id) {

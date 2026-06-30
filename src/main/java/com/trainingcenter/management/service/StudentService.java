@@ -100,6 +100,14 @@ public class StudentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<StudentResponseDTO> searchStudents(String keyword) {
+        return studentRepository.searchByUsernameOrName(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     @Transactional
     public StudentResponseDTO updateStudent(Long id, StudentUpdateRequestDTO request) {
         Student student = studentRepository.findById(id)

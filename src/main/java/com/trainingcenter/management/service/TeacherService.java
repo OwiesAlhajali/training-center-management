@@ -122,6 +122,14 @@ public class TeacherService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<TeacherResponseDTO> searchTeachers(String keyword) {
+        return teacherRepository.searchByUsernameOrName(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
 
     public TeacherResponseDTO updateTeacher(Long id, TeacherRequestDTO requestDTO) {
 
