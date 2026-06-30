@@ -25,4 +25,5 @@ public class TrainingSessionResponseDTO {
     private String instituteName;
     private Long instituteId;
     private String image;
+    private Long studentEnrollmentCount;
 }

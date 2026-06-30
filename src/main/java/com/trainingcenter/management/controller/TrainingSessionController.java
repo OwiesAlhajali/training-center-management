@@ -88,4 +88,10 @@ public class TrainingSessionController {
             @RequestParam String name) {
         return ResponseEntity.ok(sessionService.searchByCourseName(name));
     }
+
+    @GetMapping("/top-enrolled")
+    public ResponseEntity<List<TrainingSessionResponseDTO>> getTopEnrolledTrainingSessions(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(sessionService.getTopEnrolledTrainingSessions(limit));
+    }
 }

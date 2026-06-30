@@ -32,6 +32,14 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Object[]> countStudentsByTeacherPerCourse(@Param("teacherId") Long teacherId);
 
     @Query("""
+            SELECT e.trainingSession.id, COUNT(e.id)
+            FROM Enrollment e
+            GROUP BY e.trainingSession.id
+            ORDER BY COUNT(e.id) DESC
+            """)
+    List<Object[]> findTopEnrolledTrainingSessions();
+
+    @Query("""
             SELECT FUNCTION('MONTH', e.createdAt), COUNT(e)
             FROM Enrollment e
             WHERE e.trainingSession.classRoom.institute.id = :instituteId

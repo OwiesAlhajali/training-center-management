@@ -24,6 +24,7 @@ public class TrainingSessionService {
     private final CourseRepository courseRepository;
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final LectureService lectureService;
     private final ImageService imageService;
 
@@ -225,6 +226,21 @@ public TrainingSessionResponseDTO updateSessionImage(Long id, org.springframewor
         return sessionRepository.searchByCourseName(courseName).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public List<TrainingSessionResponseDTO> getTopEnrolledTrainingSessions(int limit) {
+        return enrollmentRepository.findTopEnrolledTrainingSessions().stream()
+                .limit(limit)
+                .map(row -> {
+                    Long sessionId = (Long) row[0];
+                    Long enrollmentCount = ((Number) row[1]).longValue();
+                    TrainingSession session = sessionRepository.findById(sessionId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found"));
+                    TrainingSessionResponseDTO dto = mapToResponse(session);
+                    dto.setStudentEnrollmentCount(enrollmentCount);
+                    return dto;
+                })
+                .toList();
     }
 
     private String normalizeText(String value) {
