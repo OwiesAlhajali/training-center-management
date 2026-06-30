@@ -72,4 +72,6 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
                                             @Param("endDate") LocalDate endDate);
 
     void deleteByTrainingSession_Id(Long sessionId);
+
+    long countByTeacher_Id(Long teacherId);
 }

@@ -40,6 +40,11 @@ public class StudentController {
         return studentService.getAllStudents();
     }
 
+    @GetMapping("/search")
+    public List<StudentResponseDTO> searchStudents(@RequestParam String q) {
+        return studentService.searchStudents(q);
+    }
+
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public StudentResponseDTO updateStudent(
             @PathVariable Long id,

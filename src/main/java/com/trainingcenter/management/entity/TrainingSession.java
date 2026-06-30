@@ -3,6 +3,7 @@ package com.trainingcenter.management.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "training_sessions")
@@ -33,6 +34,9 @@ public class TrainingSession {
     private String requiredEquipment;
 
     private String image;
+    
+    @Column(name = "start_date")
+    private LocalDate startDate;
      
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
