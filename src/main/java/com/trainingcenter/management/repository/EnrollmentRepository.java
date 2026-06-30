@@ -23,7 +23,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByStudentIdAndTrainingSessionStatus(@Param("studentId") Long studentId,
                                                               @Param("status") com.trainingcenter.management.entity.SessionStatus status);
 
-    boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId,Long courseId);
+    boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId, Long courseId);
 
     @Query("SELECT e.trainingSession.course.id, COUNT(DISTINCT e.student.id) " +
             "FROM Enrollment e " +
@@ -39,59 +39,29 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             """)
     List<Object[]> findTopEnrolledTrainingSessions();
 
-    @Query("""
-            SELECT FUNCTION('MONTH', e.createdAt), COUNT(e)
-            FROM Enrollment e
-            WHERE e.trainingSession.classRoom.institute.id = :instituteId
-              AND FUNCTION('YEAR', e.createdAt) = :year
-            GROUP BY FUNCTION('MONTH', e.createdAt)
-            ORDER BY FUNCTION('MONTH', e.createdAt)
-            """)
-    List<Object[]> getMonthlyRegistrationsByInstituteAndYear(@Param("instituteId") Long instituteId,
-                                                              @Param("year") Integer year);
-        boolean existsByStudentAndTrainingSession(Student student, TrainingSession trainingSession);
+    @Query(value = "SELECT " +
+            "EXTRACT(MONTH FROM e.created_at) AS month, " +
+            "COUNT(*) AS registrations " +
+            "FROM enrollments e " +
+            "JOIN training_sessions ts ON e.training_session_id = ts.id " +
+            "JOIN classrooms cr ON ts.classroom_id = cr.id " +
+            "WHERE cr.institute_id = :instituteId " +
+            "AND EXTRACT(YEAR FROM e.created_at) = :year " +
+            "GROUP BY EXTRACT(MONTH FROM e.created_at) " +
+            "ORDER BY EXTRACT(MONTH FROM e.created_at)", nativeQuery = true)
+    List<Object[]> getMonthlyRegistrationsByInstituteAndYear(
+            @Param("instituteId") Long instituteId,
+            @Param("year") Integer year);
 
-        @Query("SELECT DISTINCT e.student FROM Enrollment e")
-        List<Student> findDistinctStudents();
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.course.tenant.id = :tenantId")
+    long countByStudentIdAndTenantId(@Param("studentId") Long studentId, @Param("tenantId") Long tenantId);
 
-        @Query("SELECT e FROM Enrollment e WHERE e.trainingSession.id = :sessionId")
-        List<Enrollment> findByTrainingSessionId(@Param("sessionId") Long sessionId);
-
-        @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.status = :status")
-        List<Enrollment> findByStudentIdAndTrainingSessionStatus(@Param("studentId") Long studentId,
-                        @Param("status") com.trainingcenter.management.entity.SessionStatus status);
-
-        boolean existsByStudentIdAndTrainingSession_CourseId(Long studentId, Long courseId);
-
-        @Query("SELECT e.trainingSession.course.id, COUNT(DISTINCT e.student.id) " +
-                        "FROM Enrollment e " +
-                        "WHERE e.trainingSession.teacher.id = :teacherId " +
-                        "GROUP BY e.trainingSession.course.id")
-        List<Object[]> countStudentsByTeacherPerCourse(@Param("teacherId") Long teacherId);
-
-        @Query(value = "SELECT " +
-                "EXTRACT(MONTH FROM e.created_at) AS month, " +
-                "COUNT(*) AS registrations " +
-                "FROM enrollments e " +
-                "JOIN training_sessions ts ON e.training_session_id = ts.id " +
-                "JOIN classrooms cr ON ts.classroom_id = cr.id " +
-                "WHERE cr.institute_id = :instituteId " +
-                "AND EXTRACT(YEAR FROM e.created_at) = :year " +
-                "GROUP BY EXTRACT(MONTH FROM e.created_at) " +
-                "ORDER BY EXTRACT(MONTH FROM e.created_at)", nativeQuery = true)
-        List<Object[]> getMonthlyRegistrationsByInstituteAndYear(
-        @Param("instituteId") Long instituteId,
-        @Param("year") Integer year);
-
-        @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.student.id = :studentId AND e.trainingSession.course.tenant.id = :tenantId")
-        long countByStudentIdAndTenantId(@Param("studentId") Long studentId, @Param("tenantId") Long tenantId);
-
-        @Query("SELECT e FROM Enrollment e " +
-          "JOIN e.trainingSession ts " +
-          "JOIN ts.classRoom cr " +
-          "JOIN cr.institute i " +
-          "WHERE e.student.id = :studentId AND i.id = :instituteId")
-        List<Enrollment> findEnrollmentsByStudentAndInstitute(
-             @Param("studentId") Long studentId, 
-             @Param("instituteId") Long instituteId);
+    @Query("SELECT e FROM Enrollment e " +
+            "JOIN e.trainingSession ts " +
+            "JOIN ts.classRoom cr " +
+            "JOIN cr.institute i " +
+            "WHERE e.student.id = :studentId AND i.id = :instituteId")
+    List<Enrollment> findEnrollmentsByStudentAndInstitute(
+            @Param("studentId") Long studentId,
+            @Param("instituteId") Long instituteId);
 }
