@@ -1,5 +1,6 @@
 package com.trainingcenter.management.service;
 
+import com.trainingcenter.management.dto.TeacherLectureCountDTO;
 import com.trainingcenter.management.dto.TeacherRequestDTO;
 import com.trainingcenter.management.dto.TeacherResponseDTO;
 import com.trainingcenter.management.dto.TeacherCourseProgressDTO;
@@ -121,6 +122,25 @@ public class TeacherService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<TeacherResponseDTO> searchTeachers(String keyword) {
+        return teacherRepository.searchByUsernameOrName(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TeacherLectureCountDTO getTeacherLectureCount(Long teacherId) {
+        ensureTeacherExists(teacherId);
+        long count = lectureRepository.countByTeacher_Id(teacherId);
+        return TeacherLectureCountDTO.builder()
+                .teacherId(teacherId)
+                .lectureCount(count)
+                .build();
+    }
+
 
     @Transactional
     public TeacherResponseDTO updateTeacher(Long id, TeacherRequestDTO requestDTO) {

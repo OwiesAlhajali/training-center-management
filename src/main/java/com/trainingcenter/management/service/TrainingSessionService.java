@@ -24,6 +24,7 @@ public class TrainingSessionService {
     private final CourseRepository courseRepository;
     private final ClassRoomRepository classRoomRepository;
     private final TeacherRepository teacherRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final LectureService lectureService;
     private final ImageService imageService;
     private final InstituteRepository instituteRepository;
@@ -135,6 +136,7 @@ public class TrainingSessionService {
                 .minSeats(requestDTO.getMinSeats())
                 .numberOfLectures(requestDTO.getNumberOfLectures())
                 .status(requestDTO.getStatus())
+                .startDate(requestDTO.getStartDate())
                 .course(course)
                 .classRoom(classroom)
                 .teacher(teacher)
@@ -162,6 +164,7 @@ public class TrainingSessionService {
         existingSession.setMinSeats(requestDTO.getMinSeats());
         existingSession.setNumberOfLectures(requestDTO.getNumberOfLectures());
         existingSession.setStatus(requestDTO.getStatus());
+        existingSession.setStartDate(requestDTO.getStartDate());
         existingSession.setRequiredEquipment(requestDTO.getRequiredEquipment());
 
         if (!existingSession.getClassRoom().getId().equals(requestDTO.getClassroomId())) {
@@ -241,6 +244,21 @@ public class TrainingSessionService {
                 .collect(Collectors.toList());
     }
 
+    public List<TrainingSessionResponseDTO> getTopEnrolledTrainingSessions(int limit) {
+        return enrollmentRepository.findTopEnrolledTrainingSessions().stream()
+                .limit(limit)
+                .map(row -> {
+                    Long sessionId = (Long) row[0];
+                    Long enrollmentCount = ((Number) row[1]).longValue();
+                    TrainingSession session = sessionRepository.findById(sessionId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Training Session not found"));
+                    TrainingSessionResponseDTO dto = mapToResponse(session);
+                    dto.setStudentEnrollmentCount(enrollmentCount);
+                    return dto;
+                })
+                .toList();
+    }
+
     private String normalizeText(String value) {
         if (value == null) {
             return null;
@@ -259,6 +277,7 @@ public class TrainingSessionService {
                 .requiredEquipment(session.getRequiredEquipment())
                 .duration(session.getDuration())
                 .status(session.getStatus())
+                .startDate(session.getStartDate())
                 .courseId(session.getCourse().getId())
                 .courseName(session.getCourse().getName())
                 .courseDescription(session.getCourse().getDescription())

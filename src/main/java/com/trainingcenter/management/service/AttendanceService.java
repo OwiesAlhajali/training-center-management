@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,14 +27,24 @@ public class AttendanceService {
         Lecture lecture = lectureRepository.findById(request.getLectureId())
                 .orElseThrow(() -> new ResourceNotFoundException("Lecture not found"));
 
-        attendanceRepository.deleteByLectureId(lecture.getId());
+        // Fetch existing attendance records for this lecture to support upsert
+        Map<Long, Attendance> existingAttendanceMap = attendanceRepository.findByLectureId(lecture.getId())
+                .stream()
+                .collect(Collectors.toMap(a -> a.getStudent().getId(), a -> a));
 
         List<Attendance> attendances = request.getRecords().stream().map(record -> {
             Student student = studentRepository.findById(record.getStudentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + record.getStudentId()));
 
             if (!enrollmentRepository.existsByStudentAndTrainingSession(student, lecture.getTrainingSession())) {
-                throw new RuntimeException("Student " + student.getId() + " is not enrolled in this session");
+                throw new BadRequestException("Student " + student.getId() + " is not enrolled in this session");
+            }
+
+            // Upsert: update existing attendance or create new one
+            Attendance existing = existingAttendanceMap.get(student.getId());
+            if (existing != null) {
+                existing.setStatus(record.getStatus());
+                return existing;
             }
 
             return Attendance.builder()
