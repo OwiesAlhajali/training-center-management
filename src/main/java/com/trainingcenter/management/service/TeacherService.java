@@ -206,10 +206,11 @@ public class TeacherService {
     }
 
     @Transactional(readOnly = true)
-    public List<WeeklyScheduleItemDTO> getTeacherWeeklySchedule(Long teacherId) {
+    public List<WeeklyScheduleItemDTO> getTeacherWeeklySchedule(Long teacherId, LocalDate date) {
         ensureTeacherExists(teacherId);
 
-        LocalDate startOfWeek = LocalDate.now().with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate refDate = date != null ? date : LocalDate.now();
+        LocalDate startOfWeek = refDate.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
         LocalDate endOfWeek = startOfWeek.plusDays(6);
 
         return lectureRepository.findTeacherWeeklySchedule(teacherId, startOfWeek, endOfWeek).stream()
@@ -238,6 +239,7 @@ public class TeacherService {
     private WeeklyScheduleItemDTO mapLectureToWeeklySchedule(Lecture lecture) {
         return WeeklyScheduleItemDTO.builder()
                 .day(lecture.getLectureDate().getDayOfWeek().name())
+                .lectureDate(lecture.getLectureDate())
                 .courseName(lecture.getTrainingSession().getCourse().getName())
                 .startTime(lecture.getStartTime())
                 .endTime(lecture.getEndTime())

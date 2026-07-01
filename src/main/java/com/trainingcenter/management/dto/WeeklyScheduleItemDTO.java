@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
@@ -11,6 +12,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class WeeklyScheduleItemDTO {
     private String day;
+    private LocalDate lectureDate;
     private String courseName;
     private LocalTime startTime;
     private LocalTime endTime;
