@@ -278,6 +278,7 @@ public class TrainingSessionService {
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .startDate(session.getStartDate())
+                .studentEnrollmentCount(enrollmentCount)
                 .courseId(session.getCourse().getId())
                 .courseName(session.getCourse().getName())
                 .classroomId(session.getClassRoom().getId())
