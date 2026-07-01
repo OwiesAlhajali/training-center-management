@@ -38,4 +38,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
            "GROUP BY a.lecture.trainingSession.id")
     List<Object[]> getStudentSessionAttendanceStats(@Param("studentId") Long studentId,
                                                     @Param("presentStatus") AttendanceStatus presentStatus);
+
+    @Query("SELECT a.lecture.trainingSession.id, COUNT(DISTINCT a.lecture.id) " +
+           "FROM Attendance a " +
+           "WHERE a.lecture.trainingSession.id IN :sessionIds " +
+           "GROUP BY a.lecture.trainingSession.id")
+    List<Object[]> countLecturesGivenBySessionIds(@Param("sessionIds") List<Long> sessionIds);
 }

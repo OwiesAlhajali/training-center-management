@@ -4,16 +4,18 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @AllArgsConstructor
 public class TeacherCourseProgressDTO {
-    private Long courseId;
+    private Long trainingSessionId;
     private String courseName;
-    private Long completedSessions;
-    private Long totalSessions;
+    private Long totalLectures;
+    private Long lecturesGiven;
+    private String image;
+    private LocalDate startDate;
     private Double progressPercentage;
-    // number of students in this course for the teacher (counts per-course, not unique across multiple courses)
     private Long numberOfStudents;
 }
-

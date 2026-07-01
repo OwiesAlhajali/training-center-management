@@ -8,10 +8,12 @@ import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.entity.Lecture;
 import com.trainingcenter.management.entity.SessionStatus;
 import com.trainingcenter.management.entity.Teacher;
+import com.trainingcenter.management.entity.TrainingSession;
 import com.trainingcenter.management.entity.User;
 import com.trainingcenter.management.exception.BadRequestException;
 import com.trainingcenter.management.exception.DuplicateResourceException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
+import com.trainingcenter.management.repository.AttendanceRepository;
 import com.trainingcenter.management.repository.LectureRepository;
 import com.trainingcenter.management.repository.TeacherRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
@@ -41,6 +43,7 @@ public class TeacherService {
     private final TrainingSessionRepository trainingSessionRepository;
     private final LectureRepository lectureRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final AttendanceRepository attendanceRepository;
     private final ImageService imageService;
 
     @Transactional
@@ -190,19 +193,40 @@ public class TeacherService {
     public List<TeacherCourseProgressDTO> getTeacherCourseProgress(Long teacherId) {
         ensureTeacherExists(teacherId);
 
-        List<Object[]> progressRows = trainingSessionRepository.getTeacherCourseProgress(
-                teacherId,
-                SessionStatus.COMPLETED,
-                SessionStatus.CANCELLED
-        );
+        List<TrainingSession> sessions = trainingSessionRepository.findByTeacherIdAndStatusNot(
+                teacherId, SessionStatus.CANCELLED);
 
-        // get number of students per course for this teacher
-        Map<Long, Long> studentCounts = enrollmentRepository.countStudentsByTeacherPerCourse(teacherId).stream()
+        if (sessions.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> sessionIds = sessions.stream().map(TrainingSession::getId).toList();
+
+        Map<Long, Long> totalLecturesMap = lectureRepository.countBySessionIds(sessionIds).stream()
                 .collect(Collectors.toMap(r -> ((Number) r[0]).longValue(), r -> ((Number) r[1]).longValue()));
 
-        return progressRows.stream()
-                .map(row -> mapToCourseProgress(row, studentCounts))
-                .toList();
+        Map<Long, Long> lecturesGivenMap = attendanceRepository.countLecturesGivenBySessionIds(sessionIds).stream()
+                .collect(Collectors.toMap(r -> ((Number) r[0]).longValue(), r -> ((Number) r[1]).longValue()));
+
+        Map<Long, Long> enrollmentCountMap = enrollmentRepository.countBySessionIds(sessionIds).stream()
+                .collect(Collectors.toMap(r -> ((Number) r[0]).longValue(), r -> ((Number) r[1]).longValue()));
+
+        return sessions.stream().map(session -> {
+            Long total = totalLecturesMap.getOrDefault(session.getId(), 0L);
+            Long given = lecturesGivenMap.getOrDefault(session.getId(), 0L);
+            double percentage = total == 0 ? 0.0 : Math.round(((given * 100.0) / total) * 100.0) / 100.0;
+
+            return TeacherCourseProgressDTO.builder()
+                    .trainingSessionId(session.getId())
+                    .courseName(session.getCourse().getName())
+                    .totalLectures(total)
+                    .lecturesGiven(given)
+                    .image(session.getImage())
+                    .startDate(session.getStartDate())
+                    .progressPercentage(percentage)
+                    .numberOfStudents(enrollmentCountMap.getOrDefault(session.getId(), 0L))
+                    .build();
+        }).toList();
     }
 
     @Transactional(readOnly = true)
@@ -216,24 +240,6 @@ public class TeacherService {
         return lectureRepository.findTeacherWeeklySchedule(teacherId, startOfWeek, endOfWeek).stream()
                 .map(this::mapLectureToWeeklySchedule)
                 .toList();
-    }
-
-    private TeacherCourseProgressDTO mapToCourseProgress(Object[] row, Map<Long, Long> studentCounts) {
-        Long courseId = ((Number) row[0]).longValue();
-        Long completed = ((Number) row[2]).longValue();
-        Long total = ((Number) row[3]).longValue();
-        double percentage = total == 0 ? 0.0 : Math.round(((completed * 100.0) / total) * 100.0) / 100.0;
-
-        Long students = studentCounts.getOrDefault(courseId, 0L);
-
-        return TeacherCourseProgressDTO.builder()
-                .courseId(courseId)
-                .courseName((String) row[1])
-                .completedSessions(completed)
-                .totalSessions(total)
-                .progressPercentage(percentage)
-                .numberOfStudents(students)
-                .build();
     }
 
     private WeeklyScheduleItemDTO mapLectureToWeeklySchedule(Lecture lecture) {

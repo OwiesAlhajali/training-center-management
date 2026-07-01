@@ -66,4 +66,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findEnrollmentsByStudentAndInstitute(
             @Param("studentId") Long studentId,
             @Param("instituteId") Long instituteId);
+
+    @Query("SELECT e.trainingSession.id, COUNT(e.id) " +
+            "FROM Enrollment e " +
+            "WHERE e.trainingSession.id IN :sessionIds " +
+            "GROUP BY e.trainingSession.id")
+    List<Object[]> countBySessionIds(@Param("sessionIds") List<Long> sessionIds);
 }

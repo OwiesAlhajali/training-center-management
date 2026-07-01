@@ -74,4 +74,7 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
     void deleteByTrainingSession_Id(Long sessionId);
 
     long countByTeacher_Id(Long teacherId);
+
+    @Query("SELECT l.trainingSession.id, COUNT(l) FROM Lecture l WHERE l.trainingSession.id IN :sessionIds GROUP BY l.trainingSession.id")
+    List<Object[]> countBySessionIds(@Param("sessionIds") List<Long> sessionIds);
 }
