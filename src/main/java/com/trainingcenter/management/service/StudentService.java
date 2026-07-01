@@ -9,6 +9,7 @@ import com.trainingcenter.management.entity.Attendance;
 import com.trainingcenter.management.entity.AttendanceStatus;
 import com.trainingcenter.management.entity.Lecture;
 import com.trainingcenter.management.entity.Student;
+import com.trainingcenter.management.entity.TrainingSession;
 import com.trainingcenter.management.entity.User;
 import com.trainingcenter.management.entity.Enrollment;
 import com.trainingcenter.management.entity.SessionStatus;
@@ -31,6 +32,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -214,29 +217,41 @@ public class StudentService {
     }
 
     @Transactional(readOnly = true)
-    public StudentCompletionPercentageDTO getStudentCompletionPercentage(Long studentId) {
+    public List<StudentCompletionPercentageDTO> getStudentCompletionPercentage(Long studentId) {
         ensureStudentExists(studentId);
 
-        List<Object[]> stats = attendanceRepository.getStudentSessionAttendanceStats(studentId, AttendanceStatus.PRESENT);
-        long totalSessions = stats.size();
-        long completedSessions = stats.stream()
-                .filter(row -> {
-                    long present = ((Number) row[1]).longValue();
-                    long total = ((Number) row[2]).longValue();
-                    return total > 0 && present == total;
-                })
-                .count();
+        List<TrainingSession> sessions = enrollmentRepository.findTrainingSessionsByStudentId(
+                studentId, SessionStatus.CANCELLED);
 
-        double percentage = totalSessions == 0
-                ? 0.0
-                : Math.round(((completedSessions * 100.0) / totalSessions) * 100.0) / 100.0;
+        if (sessions.isEmpty()) {
+            return List.of();
+        }
 
-        return StudentCompletionPercentageDTO.builder()
-                .studentId(studentId)
-                .completedSessions(completedSessions)
-                .totalSessions(totalSessions)
-                .completionPercentage(percentage)
-                .build();
+        List<Long> sessionIds = sessions.stream().map(TrainingSession::getId).toList();
+
+        Map<Long, Long> totalLecturesMap = lectureRepository.countBySessionIds(sessionIds).stream()
+                .collect(Collectors.toMap(r -> ((Number) r[0]).longValue(), r -> ((Number) r[1]).longValue()));
+
+        Map<Long, Long> presentMap = attendanceRepository.countPresentBySessionIds(
+                        studentId, AttendanceStatus.PRESENT, sessionIds).stream()
+                .collect(Collectors.toMap(r -> ((Number) r[0]).longValue(), r -> ((Number) r[1]).longValue()));
+
+        return sessions.stream().map(session -> {
+            Long total = totalLecturesMap.getOrDefault(session.getId(), 0L);
+            Long attended = presentMap.getOrDefault(session.getId(), 0L);
+            double percentage = total == 0 ? 0.0 : Math.round(((attended * 100.0) / total) * 100.0) / 100.0;
+
+            return StudentCompletionPercentageDTO.builder()
+                    .studentId(studentId)
+                    .trainingSessionId(session.getId())
+                    .courseName(session.getCourse().getName())
+                    .totalLectures(total)
+                    .lecturesAttended(attended)
+                    .image(session.getImage())
+                    .startDate(session.getStartDate())
+                    .attendancePercentage(percentage)
+                    .build();
+        }).toList();
     }
 
     @Transactional(readOnly = true)
