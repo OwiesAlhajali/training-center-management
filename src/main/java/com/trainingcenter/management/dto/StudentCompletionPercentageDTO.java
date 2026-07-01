@@ -4,13 +4,18 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @AllArgsConstructor
 public class StudentCompletionPercentageDTO {
     private Long studentId;
-    private Long completedSessions;
-    private Long totalSessions;
-    private Double completionPercentage;
+    private Long trainingSessionId;
+    private String courseName;
+    private Long totalLectures;
+    private Long lecturesAttended;
+    private String image;
+    private LocalDate startDate;
+    private Double attendancePercentage;
 }
-

@@ -70,7 +70,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}/completion-percentage")
-    public StudentCompletionPercentageDTO getStudentCompletionPercentage(@PathVariable Long id) {
+    public List<StudentCompletionPercentageDTO> getStudentCompletionPercentage(@PathVariable Long id) {
         return studentService.getStudentCompletionPercentage(id);
     }
 

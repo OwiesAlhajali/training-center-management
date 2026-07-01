@@ -1,6 +1,7 @@
 package com.trainingcenter.management.repository;
 
 import com.trainingcenter.management.entity.Enrollment;
+import com.trainingcenter.management.entity.SessionStatus;
 import com.trainingcenter.management.entity.Student;
 import com.trainingcenter.management.entity.TrainingSession;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -72,4 +73,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "WHERE e.trainingSession.id IN :sessionIds " +
             "GROUP BY e.trainingSession.id")
     List<Object[]> countBySessionIds(@Param("sessionIds") List<Long> sessionIds);
+
+    @Query("SELECT e.trainingSession FROM Enrollment e " +
+            "WHERE e.student.id = :studentId " +
+            "AND e.trainingSession.status <> :cancelledStatus")
+    List<TrainingSession> findTrainingSessionsByStudentId(@Param("studentId") Long studentId,
+                                                          @Param("cancelledStatus") SessionStatus cancelledStatus);
 }
