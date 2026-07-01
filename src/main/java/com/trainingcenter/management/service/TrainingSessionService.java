@@ -268,7 +268,7 @@ public class TrainingSessionService {
     }
 
     private TrainingSessionResponseDTO mapToResponse(TrainingSession session) {
-        Long enrollmentCount = enrollmentRepository.countBySessionId(session.getId());
+        Long enrollmentCount = enrollmentRepository.countByTrainingSessionId(session.getId());
         
         return TrainingSessionResponseDTO.builder()
                 .id(session.getId())
