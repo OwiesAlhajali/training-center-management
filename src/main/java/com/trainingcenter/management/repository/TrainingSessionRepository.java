@@ -28,17 +28,11 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
     @Query("SELECT ts FROM TrainingSession ts WHERE ts.id = :id")
     Optional<TrainingSession> findByIdForUpdate(@Param("id") Long id);
 
-    @Query("SELECT ts.course.id, " +
-            "ts.course.name, " +
-            "SUM(CASE WHEN ts.status = :completedStatus THEN 1 ELSE 0 END), " +
-            "COUNT(ts) " +
-            "FROM TrainingSession ts " +
+    @Query("SELECT ts FROM TrainingSession ts " +
             "WHERE ts.teacher.id = :teacherId " +
-            "AND ts.status <> :cancelledStatus " +
-            "GROUP BY ts.course.id, ts.course.name")
-    List<Object[]> getTeacherCourseProgress(@Param("teacherId") Long teacherId,
-                                            @Param("completedStatus") SessionStatus completedStatus,
-                                            @Param("cancelledStatus") SessionStatus cancelledStatus);
+            "AND ts.status <> :cancelledStatus")
+    List<TrainingSession> findByTeacherIdAndStatusNot(@Param("teacherId") Long teacherId,
+                                                      @Param("cancelledStatus") SessionStatus cancelledStatus);
 
     List<TrainingSession> findByStatus(SessionStatus status);
 
