@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -78,8 +79,10 @@ public class TeacherController {
     }
 
     @GetMapping("/{id}/weekly-schedule")
-    public ResponseEntity<List<WeeklyScheduleItemDTO>> getTeacherWeeklySchedule(@PathVariable Long id) {
-        return ResponseEntity.ok(teacherService.getTeacherWeeklySchedule(id));
+    public ResponseEntity<List<WeeklyScheduleItemDTO>> getTeacherWeeklySchedule(
+            @PathVariable Long id,
+            @RequestParam(required = false) LocalDate date) {
+        return ResponseEntity.ok(teacherService.getTeacherWeeklySchedule(id, date));
     }
 
     @GetMapping("/{id}/lecture-count")
