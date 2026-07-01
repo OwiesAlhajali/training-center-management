@@ -249,12 +249,9 @@ public class TrainingSessionService {
                 .limit(limit)
                 .map(row -> {
                     Long sessionId = (Long) row[0];
-                    Long enrollmentCount = ((Number) row[1]).longValue();
                     TrainingSession session = sessionRepository.findById(sessionId)
                             .orElseThrow(() -> new ResourceNotFoundException("Training Session not found"));
-                    TrainingSessionResponseDTO dto = mapToResponse(session);
-                    dto.setStudentEnrollmentCount(enrollmentCount);
-                    return dto;
+                    return mapToResponse(session);
                 })
                 .toList();
     }
@@ -291,6 +288,7 @@ public class TrainingSessionService {
                 .instituteId(session.getClassRoom().getInstitute() != null
                         ? session.getClassRoom().getInstitute().getId() : null)
                 .image(session.getImage())
+                .studentEnrollmentCount(enrollmentRepository.countByTrainingSessionId(session.getId()))
                 .build();
     }
 }
