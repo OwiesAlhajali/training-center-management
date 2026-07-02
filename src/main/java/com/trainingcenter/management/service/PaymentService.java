@@ -41,15 +41,16 @@ public class PaymentService {
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
 
-    @Value("${stripe.checkout.success-url:http://localhost:3000/payment/success}")
+    @Value("${stripe.checkout.success-url:http://localhost:5173/payment/success}")
     private String checkoutSuccessUrl;
 
-    @Value("${stripe.checkout.cancel-url:http://localhost:3000/payment/cancel}")
+    @Value("${stripe.checkout.cancel-url:http://localhost:5173/payment/cancel}")
     private String checkoutCancelUrl;
 
     @Transactional
     public String initiatePayment(Long sessionId, Long studentId) throws StripeException {
         validateRequest(sessionId, studentId);
+        validateStripeConfiguration();
 
         Stripe.apiKey = stripeSecretKey;
 
@@ -79,10 +80,15 @@ public class PaymentService {
         }
 
         if (existingPayment.getStatus() == PaymentStatus.PENDING) {
-            String checkoutUrl = resolveExistingCheckoutUrl(existingPayment.getStripeCheckoutSessionId());
-            if (checkoutUrl != null) {
-                logger.info("Returning existing pending Stripe Checkout Session URL for student {} and session {}", student.getId(), trainingSession.getId());
-                return checkoutUrl;
+            try {
+                String checkoutUrl = resolveExistingCheckoutUrl(existingPayment.getStripeCheckoutSessionId());
+                if (checkoutUrl != null) {
+                    logger.info("Returning existing pending Stripe Checkout Session URL for student {} and session {}", student.getId(), trainingSession.getId());
+                    return checkoutUrl;
+                }
+            } catch (StripeException ex) {
+                logger.warn("Existing Stripe Checkout Session {} could not be reused, creating a replacement",
+                        existingPayment.getStripeCheckoutSessionId(), ex);
             }
 
             logger.warn("Existing pending checkout session {} could not be reused, creating a replacement", existingPayment.getStripeCheckoutSessionId());
@@ -141,8 +147,22 @@ public class PaymentService {
     }
 
     private void validateRequest(Long sessionId, Long studentId) {
-        if (sessionId == null || studentId == null) {
+        if (sessionId == null || studentId == null || sessionId <= 0 || studentId <= 0) {
             throw new BadRequestException("studentId and sessionId are required");
+        }
+    }
+
+    private void validateStripeConfiguration() {
+        if (stripeSecretKey == null || stripeSecretKey.isBlank()) {
+            throw new BadRequestException("Stripe secret key is not configured");
+        }
+
+        if (checkoutSuccessUrl == null || checkoutSuccessUrl.isBlank()) {
+            throw new BadRequestException("Stripe success URL is not configured");
+        }
+
+        if (checkoutCancelUrl == null || checkoutCancelUrl.isBlank()) {
+            throw new BadRequestException("Stripe cancel URL is not configured");
         }
     }
 
