@@ -33,6 +33,11 @@ public class WebhookController {
             return ResponseEntity.badRequest().build();
         }
 
+        if (webhookSecret == null || webhookSecret.isBlank()) {
+            log.error("Stripe webhook secret is not configured");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
         Event event;
         try {
             // Verify Stripe signature

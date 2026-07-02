@@ -61,24 +61,12 @@ public class WebhookService {
         Student student = payment.getStudent();
 
         if (enrollmentRepository.existsByStudentAndTrainingSession(student, trainingSession)) {
-            payment.setStatus(PaymentStatus.SUCCEEDED);
-            paymentRepository.save(payment);
+            markPaymentSucceeded(payment);
             logger.info("Enrollment already exists for student {} and training session {}", student.getId(), trainingSession.getId());
             return;
         }
-        
-        // Ensure Register exists for student and tenant
-        if (trainingSession.getCourse() != null && trainingSession.getCourse().getTenant() != null) {
-            Long tenantId = trainingSession.getCourse().getTenant().getId();
-                RegisterRequestDTO registerRequest = new RegisterRequestDTO();
-                    registerRequest.setStudentId(student.getId());
-                        registerRequest.setTenantId(tenantId);
-                            try {
-                                    registerService.createRegister(registerRequest);
-                                        } catch (DuplicateResourceException e) {
-                                                // Already registered, continue
-                                                    }
-                                                    }
+
+        ensureRegisterExists(student, trainingSession);
 
         if (trainingSession.getAvailableSeats() == null || trainingSession.getAvailableSeats() <= 0) {
             logger.error("No available seats for training session {} during webhook processing", trainingSession.getId());
@@ -94,12 +82,10 @@ public class WebhookService {
             enrollmentRepository.save(enrollment);
             trainingSessionRepository.save(trainingSession);
 
-            payment.setStatus(PaymentStatus.SUCCEEDED);
-            paymentRepository.save(payment);
+            markPaymentSucceeded(payment);
         } catch (DataIntegrityViolationException ex) {
             if (enrollmentRepository.existsByStudentAndTrainingSession(student, trainingSession)) {
-                payment.setStatus(PaymentStatus.SUCCEEDED);
-                paymentRepository.save(payment);
+                markPaymentSucceeded(payment);
                 logger.info("Enrollment already created by another transaction for student {} and training session {}", student.getId(), trainingSession.getId());
                 return;
             }
@@ -165,6 +151,30 @@ public class WebhookService {
                 || !metadataTrainingSessionId.equals(payment.getTrainingSession().getId())) {
             throw new BadRequestException("Checkout session metadata does not match the stored payment");
         }
+    }
+
+    private void ensureRegisterExists(Student student, TrainingSession trainingSession) {
+        if (trainingSession.getCourse() == null || trainingSession.getCourse().getTenant() == null) {
+            return;
+        }
+
+        RegisterRequestDTO registerRequest = new RegisterRequestDTO();
+        registerRequest.setStudentId(student.getId());
+        registerRequest.setTenantId(trainingSession.getCourse().getTenant().getId());
+
+        try {
+            registerService.createRegister(registerRequest);
+        } catch (DuplicateResourceException e) {
+            logger.info("Register already exists for student {} and tenant {}", student.getId(), registerRequest.getTenantId());
+        } catch (Exception e) {
+            logger.warn("Register creation failed for student {} and tenant {}, continuing payment flow: {}",
+                    student.getId(), registerRequest.getTenantId(), e.getMessage());
+        }
+    }
+
+    private void markPaymentSucceeded(Payment payment) {
+        payment.setStatus(PaymentStatus.SUCCEEDED);
+        paymentRepository.save(payment);
     }
 
     private Long parseMetadataId(String value, String fieldName) {
