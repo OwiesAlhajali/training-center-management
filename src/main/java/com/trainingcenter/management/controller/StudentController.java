@@ -5,6 +5,7 @@ import com.trainingcenter.management.dto.StudentRequestDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.dto.StudentTrainingHoursDTO;
 import com.trainingcenter.management.dto.StudentUpdateRequestDTO;
+import com.trainingcenter.management.dto.StudentWithInstituteRequestDTO;
 import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.service.StudentService;
 import jakarta.validation.Valid;
@@ -29,6 +30,14 @@ public class StudentController {
     public StudentResponseDTO createStudent (@Valid @RequestBody StudentRequestDTO request) {
 
         return studentService.createStudent(request);
+    }
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public StudentResponseDTO createStudentWithInstituteRegistration(
+            @Valid @RequestBody StudentWithInstituteRequestDTO request) {
+
+        return studentService.createStudentWithInstituteRegistration(request);
     }
 
     @GetMapping("/{id}")
