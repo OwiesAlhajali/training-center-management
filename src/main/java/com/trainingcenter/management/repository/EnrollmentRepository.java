@@ -79,4 +79,11 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "AND e.trainingSession.status <> :cancelledStatus")
     List<TrainingSession> findTrainingSessionsByStudentId(@Param("studentId") Long studentId,
                                                           @Param("cancelledStatus") SessionStatus cancelledStatus);
+
+    @Query("SELECT e.trainingSession FROM Enrollment e " +
+            "WHERE e.student.id = :studentId AND e.trainingSession.course.id = :courseId " +
+            "ORDER BY e.trainingSession.startDate DESC")
+    List<TrainingSession> findTrainingSessionsByStudentAndCourse(
+            @Param("studentId") Long studentId,
+            @Param("courseId") Long courseId);
 }
