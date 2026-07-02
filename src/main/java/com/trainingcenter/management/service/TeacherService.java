@@ -160,6 +160,12 @@ public class TeacherService {
         existing.setCv(requestDTO.getCv());
         existing.setExperienceYears(requestDTO.getExperienceYears());
 
+        User user = existing.getUser();
+        if (requestDTO.getPhone() != null) {
+            user.setContactInfo(requestDTO.getPhone());
+            userRepository.save(user);
+        }
+
         return mapToResponse(teacherRepository.save(existing));
     }
 
