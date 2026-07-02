@@ -112,8 +112,8 @@ public class StudentService {
     }
 
     @Transactional(readOnly = true)
-    public List<StudentResponseDTO> searchStudents(String keyword) {
-        return studentRepository.searchByUsernameOrName(keyword)
+    public List<StudentResponseDTO> searchStudents(String keyword, Long instituteId) {
+        return studentRepository.searchByUsernameOrNameAndInstituteId(keyword, instituteId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

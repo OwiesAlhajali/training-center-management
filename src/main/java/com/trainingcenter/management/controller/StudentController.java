@@ -42,8 +42,8 @@ public class StudentController {
     }
 
     @GetMapping("/search")
-    public List<StudentResponseDTO> searchStudents(@RequestParam String q) {
-        return studentService.searchStudents(q);
+    public List<StudentResponseDTO> searchStudents(@RequestParam String q, @RequestParam Long instituteId) {
+        return studentService.searchStudents(q, instituteId);
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

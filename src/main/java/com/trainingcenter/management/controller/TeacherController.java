@@ -43,8 +43,8 @@ public class TeacherController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<TeacherResponseDTO>> searchTeachers(@RequestParam String q) {
-        return ResponseEntity.ok(teacherService.searchTeachers(q));
+    public ResponseEntity<List<TeacherResponseDTO>> searchTeachers(@RequestParam String q, @RequestParam Long instituteId) {
+        return ResponseEntity.ok(teacherService.searchTeachers(q, instituteId));
     }
 
     @GetMapping("/{id}")
