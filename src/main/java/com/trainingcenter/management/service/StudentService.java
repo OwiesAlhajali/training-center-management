@@ -4,11 +4,14 @@ import com.trainingcenter.management.dto.StudentRequestDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.dto.StudentUpdateRequestDTO;
 import com.trainingcenter.management.dto.StudentTrainingHoursDTO;
+import com.trainingcenter.management.dto.StudentWithInstituteRequestDTO;
 import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.entity.Attendance;
 import com.trainingcenter.management.entity.AttendanceStatus;
 import com.trainingcenter.management.entity.Lecture;
+import com.trainingcenter.management.entity.Register;
 import com.trainingcenter.management.entity.Student;
+import com.trainingcenter.management.entity.Tenant;
 import com.trainingcenter.management.entity.TrainingSession;
 import com.trainingcenter.management.entity.User;
 import com.trainingcenter.management.entity.Enrollment;
@@ -19,6 +22,7 @@ import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.AttendanceRepository;
 import com.trainingcenter.management.repository.LectureRepository;
 import com.trainingcenter.management.repository.StudentRepository;
+import com.trainingcenter.management.repository.TenantRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.InstituteRepository;
@@ -44,13 +48,48 @@ public class StudentService {
     private final UserRepository userRepository;
     private final InstituteRepository instituteRepository; 
     private final EnrollmentRepository enrollmentRepository;  
-    private final RegisterRepository registerRepository;     
+    private final RegisterRepository registerRepository;
+    private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
     private final AttendanceRepository attendanceRepository;
     private final LectureRepository lectureRepository;
     private final ImageService imageService;
 
     public StudentResponseDTO createStudent(StudentRequestDTO request) {
+        Student savedStudent = createStudentEntity(request);
+        return mapToResponse(savedStudent);
+    }
+
+    public StudentResponseDTO createStudentWithInstituteRegistration(StudentWithInstituteRequestDTO dto) {
+        Student savedStudent = createStudentEntity(dto.getStudent());
+
+        Long tenantId = instituteRepository.findTenantIdByInstituteId(dto.getInstituteId());
+        if (tenantId == null) {
+            throw new ResourceNotFoundException("Institute not found with id: " + dto.getInstituteId());
+        }
+
+        if (registerRepository.existsByStudentIdAndTenantId(savedStudent.getId(), tenantId)) {
+            throw new DuplicateResourceException(
+                    "Register already exists for studentId=" + savedStudent.getId()
+                            + " and tenantId=" + tenantId
+            );
+        }
+
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with id: " + tenantId));
+
+        Register register = Register.builder()
+                .student(savedStudent)
+                .tenant(tenant)
+                .balance(java.math.BigDecimal.ZERO)
+                .build();
+
+        registerRepository.save(register);
+
+        return mapToResponse(savedStudent);
+    }
+
+    private Student createStudentEntity(StudentRequestDTO request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BadRequestException("Password and confirm password do not match");
         }
@@ -88,9 +127,7 @@ public class StudentService {
 
         student.setUser(savedUser);
 
-        Student savedStudent = studentRepository.save(student);
-
-        return mapToResponse(savedStudent);
+        return studentRepository.save(student);
     }
 
     @Transactional(readOnly = true)
@@ -112,8 +149,8 @@ public class StudentService {
     }
 
     @Transactional(readOnly = true)
-    public List<StudentResponseDTO> searchStudents(String keyword) {
-        return studentRepository.searchByUsernameOrName(keyword)
+    public List<StudentResponseDTO> searchStudents(String keyword, Long instituteId) {
+        return studentRepository.searchByUsernameOrNameAndInstituteId(keyword, instituteId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
