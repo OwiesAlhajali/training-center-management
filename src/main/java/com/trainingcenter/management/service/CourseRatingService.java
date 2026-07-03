@@ -114,6 +114,7 @@ public class CourseRatingService {
         return avg != null ? BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
+    @Transactional
     public List<TopRatedReviewDTO> getTopRatedReviews(int limit) {
         return ratingRepository.findByOrderByRatingDesc(PageRequest.of(0, limit))
                 .stream()
