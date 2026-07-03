@@ -2,6 +2,7 @@ package com.trainingcenter.management.controller;
 
 import com.trainingcenter.management.dto.CourseRatingRequestDTO;
 import com.trainingcenter.management.dto.CourseRatingResponseDTO;
+import com.trainingcenter.management.dto.TopRatedReviewDTO;
 import com.trainingcenter.management.service.CourseRatingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -54,5 +55,11 @@ public class CourseRatingController {
     @GetMapping("/courses/{courseId}/ratings/average")
     public BigDecimal getAverageRatingForCourse(@PathVariable Long courseId) {
         return ratingService.getAverageRatingForCourse(courseId);
+    }
+
+    @GetMapping("/ratings/top")
+    public List<TopRatedReviewDTO> getTopRatedReviews(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ratingService.getTopRatedReviews(limit);
     }
 }

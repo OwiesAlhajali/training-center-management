@@ -2,9 +2,11 @@ package com.trainingcenter.management.service;
 
 import com.trainingcenter.management.dto.CourseRatingRequestDTO;
 import com.trainingcenter.management.dto.CourseRatingResponseDTO;
+import com.trainingcenter.management.dto.TopRatedReviewDTO;
 import com.trainingcenter.management.entity.Course;
 import com.trainingcenter.management.entity.CourseRating;
 import com.trainingcenter.management.entity.Student;
+import com.trainingcenter.management.entity.TrainingSession;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.CourseRatingRepository;
 import com.trainingcenter.management.repository.CourseRepository;
@@ -12,6 +14,7 @@ import com.trainingcenter.management.repository.EnrollmentRepository;
 import com.trainingcenter.management.repository.StudentRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -111,6 +114,13 @@ public class CourseRatingService {
         return avg != null ? BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
+    public List<TopRatedReviewDTO> getTopRatedReviews(int limit) {
+        return ratingRepository.findByOrderByRatingDesc(PageRequest.of(0, limit))
+                .stream()
+                .map(this::mapToTopRatedDTO)
+                .collect(Collectors.toList());
+    }
+
     private void validateRating(BigDecimal rating) {
         if (rating == null ||
                 rating.compareTo(BigDecimal.ONE) < 0 ||
@@ -129,5 +139,25 @@ public class CourseRatingService {
                 rating.getRating(),
                 rating.getReview()
         );
+    }
+
+    private TopRatedReviewDTO mapToTopRatedDTO(CourseRating rating) {
+        Long studentId = rating.getStudent().getId();
+        Long courseId = rating.getCourse().getId();
+
+        List<TrainingSession> sessions = enrollmentRepository
+                .findTrainingSessionsByStudentAndCourse(studentId, courseId);
+
+        Long trainingSessionId = sessions.isEmpty() ? null : sessions.get(0).getId();
+
+        return TopRatedReviewDTO.builder()
+                .id(rating.getId())
+                .trainingSessionId(trainingSessionId)
+                .courseName(rating.getCourse().getName())
+                .userId(rating.getStudent().getId())
+                .username(rating.getStudent().getUser().getUsername())
+                .rating(rating.getRating())
+                .review(rating.getReview())
+                .build();
     }
 }

@@ -127,8 +127,8 @@ public class TeacherService {
     }
 
     @Transactional(readOnly = true)
-    public List<TeacherResponseDTO> searchTeachers(String keyword) {
-        return teacherRepository.searchByUsernameOrName(keyword)
+    public List<TeacherResponseDTO> searchTeachers(String keyword, Long instituteId) {
+        return teacherRepository.searchByUsernameOrNameAndInstituteId(keyword, instituteId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

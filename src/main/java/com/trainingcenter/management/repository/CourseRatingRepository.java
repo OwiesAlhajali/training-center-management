@@ -1,6 +1,7 @@
 package com.trainingcenter.management.repository;
 
 import com.trainingcenter.management.entity.CourseRating;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,4 +18,6 @@ public interface CourseRatingRepository extends JpaRepository<CourseRating, Long
 
     @Query("SELECT AVG(r.rating) FROM CourseRating r WHERE r.course.id = :courseId")
     Double findAverageRatingByCourseId(@Param("courseId") Long courseId);
+
+    List<CourseRating> findByOrderByRatingDesc(Pageable pageable);
 }

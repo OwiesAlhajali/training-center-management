@@ -16,6 +16,12 @@ public interface TeacherRepository extends JpaRepository<Teacher,Long> {
     @Query("SELECT t FROM Teacher t JOIN t.user u WHERE u.username LIKE %:keyword% OR t.firstName LIKE %:keyword% OR t.lastName LIKE %:keyword%")
     List<Teacher> searchByUsernameOrName(@Param("keyword") String keyword);
 
+    @Query("SELECT t FROM Teacher t JOIN t.user u " +
+           "WHERE (u.username LIKE %:keyword% OR t.firstName LIKE %:keyword% OR t.lastName LIKE %:keyword%) " +
+           "AND t.id IN (SELECT ts.teacher.id FROM TrainingSession ts JOIN ts.classRoom cr " +
+           "  WHERE cr.institute.id = :instituteId)")
+    List<Teacher> searchByUsernameOrNameAndInstituteId(@Param("keyword") String keyword, @Param("instituteId") Long instituteId);
+
     Optional<Teacher> findByUser(User user);
 
 }

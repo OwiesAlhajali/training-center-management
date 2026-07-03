@@ -4,7 +4,7 @@ import com.trainingcenter.management.dto.StudentCompletionPercentageDTO;
 import com.trainingcenter.management.dto.StudentRequestDTO;
 import com.trainingcenter.management.dto.StudentResponseDTO;
 import com.trainingcenter.management.dto.StudentTrainingHoursDTO;
-import com.trainingcenter.management.dto.StudentUpdateRequestDTO;
+import com.trainingcenter.management.dto.StudentUpdateRequestDTO3import com.trainingcenter.management.dto.StudentWithInstituteRequestDTO;
 import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
 import com.trainingcenter.management.service.StudentService;
 import jakarta.validation.Valid;
@@ -31,6 +31,14 @@ public class StudentController {
         return studentService.createStudent(request);
     }
 
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public StudentResponseDTO createStudentWithInstituteRegistration(
+            @Valid @RequestBody StudentWithInstituteRequestDTO request) {
+
+        return studentService.createStudentWithInstituteRegistration(request);
+    }
+
     @GetMapping("/{id}")
     public StudentResponseDTO getStudentById(@PathVariable Long id) {
         return studentService.getStudentById(id);
@@ -42,8 +50,8 @@ public class StudentController {
     }
 
     @GetMapping("/search")
-    public List<StudentResponseDTO> searchStudents(@RequestParam String q) {
-        return studentService.searchStudents(q);
+    public List<StudentResponseDTO> searchStudents(@RequestParam String q, @RequestParam Long instituteId) {
+        return studentService.searchStudents(q, instituteId);
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
