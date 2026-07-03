@@ -29,6 +29,7 @@ import java.time.Year;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,15 +59,12 @@ public class InstituteService {
        String[] words = instituteName.split("\\s+");
        String tenantName = (words.length >= 2) ? words[0] + " " + words[1]  : instituteName;
 
+    tenant.setKey(generateUniqueTenantKey());
        tenant.setName(tenantName);
        tenant.setAddress(requestDTO.getLocation());  
 
  
        Tenant savedTenant = tenantRepository.save(tenant);
-
-  
-       savedTenant.setKey("key" + savedTenant.getId());
-       tenantRepository.save(savedTenant); 
 
    
        validateWorkingHours(requestDTO.getStartTime(), requestDTO.getEndTime());
@@ -87,6 +85,14 @@ public class InstituteService {
 
        return mapToResponse(instituteRepository.save(institute));
    }
+
+    private String generateUniqueTenantKey() {
+        String key;
+        do {
+            key = "TC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        } while (tenantRepository.existsByKey(key));
+        return key;
+    }
 
   @Transactional(readOnly = true)
   public List<InstituteResponseDTO> getInstitutesByUser(Long userId) {
