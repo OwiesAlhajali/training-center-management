@@ -47,6 +47,18 @@ public class TeacherController {
         return ResponseEntity.ok(teacherService.searchTeachers(q, instituteId));
     }
 
+    @GetMapping("/by-institute/{instituteId}")
+    public ResponseEntity<List<TeacherResponseDTO>> getTeachersByInstitute(@PathVariable Long instituteId) {
+        return ResponseEntity.ok(teacherService.getTeachersByInstituteId(instituteId));
+    }
+
+    @GetMapping("/by-institute/{instituteId}/search")
+    public ResponseEntity<List<TeacherResponseDTO>> searchTeachersByInstitute(
+            @PathVariable Long instituteId,
+            @RequestParam String q) {
+        return ResponseEntity.ok(teacherService.searchTeachersByInstitute(q, instituteId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TeacherResponseDTO> getTeacherById(
             @PathVariable Long id) {

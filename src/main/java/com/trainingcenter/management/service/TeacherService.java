@@ -19,6 +19,7 @@ import com.trainingcenter.management.repository.TeacherRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
 import com.trainingcenter.management.repository.UserRepository;
 import com.trainingcenter.management.repository.EnrollmentRepository;
+import com.trainingcenter.management.repository.InstituteTeacherRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +46,7 @@ public class TeacherService {
     private final EnrollmentRepository enrollmentRepository;
     private final AttendanceRepository attendanceRepository;
     private final ImageService imageService;
+    private final InstituteTeacherRepository instituteTeacherRepository;
 
     @Transactional
     public TeacherResponseDTO createTeacher(TeacherRequestDTO requestDTO) {
@@ -132,6 +134,20 @@ public class TeacherService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeacherResponseDTO> getTeachersByInstituteId(Long instituteId) {
+        return teacherRepository.findByInstituteId(instituteId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeacherResponseDTO> searchTeachersByInstitute(String keyword, Long instituteId) {
+        return teacherRepository.searchByInstituteId(keyword, instituteId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
