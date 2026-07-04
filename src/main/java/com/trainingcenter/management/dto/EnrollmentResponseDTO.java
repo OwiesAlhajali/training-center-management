@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class EnrollmentResponseDTO {
 
     private Long id;
-    private Long studentId;
+    private StudentResponseDTO student;
     private Long trainingSessionId;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

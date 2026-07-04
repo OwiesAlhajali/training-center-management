@@ -182,7 +182,7 @@ public class EnrollmentService {
     private EnrollmentResponseDTO mapToDTO(Enrollment e) {
         return new EnrollmentResponseDTO(
                 e.getId(),
-                e.getStudent().getId(),
+                mapStudentToDTO(e.getStudent()),
                 e.getTrainingSession().getId(),
                 e.getCreatedAt());
     }
