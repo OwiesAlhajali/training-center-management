@@ -41,10 +41,10 @@ public class PaymentService {
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
 
-    @Value("${stripe.checkout.success-url:http://localhost:5173/payment/success}")
+    @Value("${stripe.checkout.success-url:https://training-centers-management.netlify.app/payment/success}")
     private String checkoutSuccessUrl;
 
-    @Value("${stripe.checkout.cancel-url:http://localhost:5173/payment/cancel}")
+    @Value("${stripe.checkout.cancel-url:https://training-centers-management.netlify.app/payment/cancel}")
     private String checkoutCancelUrl;
 
     @Transactional
