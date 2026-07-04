@@ -144,6 +144,26 @@ public class InstituteService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<StudentResponseDTO> getActiveStudentsByTenant(Long tenantId) {
+        if (!tenantRepository.existsById(tenantId)) {
+            throw new ResourceNotFoundException("Tenant not found with ID: " + tenantId);
+        }
+
+        return enrollmentRepository.findActiveStudentsByTenantId(tenantId).stream()
+                .map(this::mapStudentToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Long getActiveStudentsCountByTenant(Long tenantId) {
+        if (!tenantRepository.existsById(tenantId)) {
+            throw new ResourceNotFoundException("Tenant not found with ID: " + tenantId);
+        }
+
+        return enrollmentRepository.countActiveStudentsByTenantId(tenantId);
+    }
+
     @Transactional
     public InstituteResponseDTO updateInstitute(Long id, InstituteRequestDTO requestDTO) {
         Institute existing = instituteRepository.findById(id)
