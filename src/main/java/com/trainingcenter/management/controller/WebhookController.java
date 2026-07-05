@@ -53,8 +53,9 @@ public class WebhookController {
         // Handle specific event types
         try {
             if ("checkout.session.completed".equals(event.getType())) {
-                log.info("Processing checkout.session.completed event: {}", event.getId());
-                webhookService.handleCheckoutSessionCompleted(event);
+                log.info("Received checkout.session.completed event: {} - delegating to async handler", event.getId());
+                // Delegate processing to an async handler to acknowledge Stripe quickly and avoid retries/delays
+                webhookService.handleCheckoutSessionCompletedAsync(event);
             } else {
                 log.info("Ignoring unsupported Stripe event type: {}", event.getType());
             }
