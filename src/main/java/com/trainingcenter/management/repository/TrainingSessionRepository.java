@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -52,6 +53,10 @@ public interface TrainingSessionRepository extends JpaRepository<TrainingSession
             @Param("instituteId") Long instituteId,
             @Param("statuses") List<SessionStatus> statuses);
 
+    @Modifying
+    @Query("UPDATE TrainingSession ts SET ts.availableSeats = ts.availableSeats - 1 " +
+            "WHERE ts.id = :id AND ts.availableSeats > 0")
+    int decrementAvailableSeatsIfAvailable(@Param("id") Long id);
     @Query("SELECT COUNT(ts) FROM TrainingSession ts " +
        "JOIN ts.classRoom cr " +
        "WHERE cr.institute.id = :instituteId " +
