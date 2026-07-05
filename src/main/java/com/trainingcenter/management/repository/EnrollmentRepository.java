@@ -90,12 +90,12 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     @Query("SELECT DISTINCT e.student FROM Enrollment e " +
             "JOIN e.trainingSession ts " +
             "JOIN ts.course c " +
-            "WHERE c.tenant.id = :tenantId")
+            "WHERE c.tenant.id = :tenantId AND ts.status = 'ACTIVE'")
     List<Student> findActiveStudentsByTenantId(@Param("tenantId") Long tenantId);
 
     @Query("SELECT COUNT(DISTINCT e.student.id) FROM Enrollment e " +
             "JOIN e.trainingSession ts " +
             "JOIN ts.course c " +
-            "WHERE c.tenant.id = :tenantId")
+            "WHERE c.tenant.id = :tenantId AND ts.status = 'ACTIVE'")
     long countActiveStudentsByTenantId(@Param("tenantId") Long tenantId);
 }
