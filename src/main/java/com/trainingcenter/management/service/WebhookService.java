@@ -38,7 +38,6 @@ public class WebhookService {
 
     private static final Logger logger = LoggerFactory.getLogger(WebhookService.class);
 
-    @Transactional
     public void handleCheckoutSessionCompleted(Event event) {
         CheckoutSessionDetails checkoutSession = resolveCheckoutSession(event);
 
@@ -56,9 +55,13 @@ public class WebhookService {
 
         validateCheckoutMetadata(checkoutSession, payment);
 
-        TrainingSession trainingSession = trainingSessionRepository.findByIdForUpdate(payment.getTrainingSession().getId())
-                .orElseThrow(() -> new BadRequestException("Training session not found for payment"));
+        // Use an atomic DB-side decrement to avoid long PESSIMISTIC_WRITE locks and races.
+        Long trainingSessionId = payment.getTrainingSession().getId();
         Student student = payment.getStudent();
+
+        // Load training session for validation and relations (no lock)
+        TrainingSession trainingSession = trainingSessionRepository.findById(trainingSessionId)
+                .orElseThrow(() -> new BadRequestException("Training session not found for payment"));
 
         if (enrollmentRepository.existsByStudentAndTrainingSession(student, trainingSession)) {
             markPaymentSucceeded(payment);
@@ -68,19 +71,23 @@ public class WebhookService {
 
         ensureRegisterExists(student, trainingSession);
 
-        if (trainingSession.getAvailableSeats() == null || trainingSession.getAvailableSeats() <= 0) {
-            logger.error("No available seats for training session {} during webhook processing", trainingSession.getId());
+        // Attempt atomic decrement. This performs UPDATE ... WHERE availableSeats > 0 and returns rows affected.
+        int rows = trainingSessionRepository.decrementAvailableSeatsIfAvailable(trainingSessionId);
+        if (rows <= 0) {
+            logger.error("No available seats for training session {} during webhook processing (atomic decrement failed)", trainingSessionId);
             throw new IllegalStateException("No available seats for training session");
         }
 
         try {
+            // Refresh the training session entity state after decrement
+            trainingSession = trainingSessionRepository.findById(trainingSessionId)
+                    .orElseThrow(() -> new BadRequestException("Training session not found for payment"));
+
             Enrollment enrollment = new Enrollment();
             enrollment.setStudent(student);
             enrollment.setTrainingSession(trainingSession);
 
-            trainingSession.setAvailableSeats(trainingSession.getAvailableSeats() - 1);
             enrollmentRepository.save(enrollment);
-            trainingSessionRepository.save(trainingSession);
 
             markPaymentSucceeded(payment);
         } catch (DataIntegrityViolationException ex) {
@@ -93,6 +100,23 @@ public class WebhookService {
         }
 
         logger.info("Payment succeeded and enrollment created for checkout session {}", checkoutSession.sessionId());
+    }
+
+    /**
+     * Asynchronous wrapper for webhook processing. Verifies and processes the event in a separate thread
+     * so that the controller can acknowledge Stripe quickly and avoid webhook retries causing delayed updates.
+     */
+    @org.springframework.scheduling.annotation.Async
+    @Transactional
+    public void handleCheckoutSessionCompletedAsync(Event event) {
+        try {
+            logger.info("Starting async processing for webhook event {}", event.getId());
+            handleCheckoutSessionCompleted(event);
+            logger.info("Finished async processing for webhook event {}", event.getId());
+        } catch (Exception e) {
+            logger.error("Error processing webhook event asynchronously: {}", e.getMessage(), e);
+            // Do not rethrow to avoid terminating the async executor thread; errors are logged for investigation
+        }
     }
 
     private CheckoutSessionDetails resolveCheckoutSession(Event event) {
