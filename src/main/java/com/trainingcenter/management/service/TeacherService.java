@@ -177,10 +177,26 @@ public class TeacherService {
         existing.setExperienceYears(requestDTO.getExperienceYears());
 
         User user = existing.getUser();
+
+        if (requestDTO.getUsername() != null && !user.getUsername().equals(requestDTO.getUsername())) {
+            if (userRepository.findByUsername(requestDTO.getUsername()).isPresent()) {
+                throw new DuplicateResourceException("Username already exists");
+            }
+            user.setUsername(requestDTO.getUsername());
+        }
+
+        if (requestDTO.getEmail() != null && !user.getEmail().equals(requestDTO.getEmail())) {
+            if (userRepository.findByEmail(requestDTO.getEmail()).isPresent()) {
+                throw new DuplicateResourceException("Email already exists");
+            }
+            user.setEmail(requestDTO.getEmail());
+        }
+
         if (requestDTO.getPhone() != null) {
             user.setContactInfo(requestDTO.getPhone());
-            userRepository.save(user);
         }
+
+        userRepository.save(user);
 
         return mapToResponse(teacherRepository.save(existing));
     }
