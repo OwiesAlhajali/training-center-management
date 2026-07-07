@@ -5,6 +5,8 @@ import com.trainingcenter.management.dto.TeacherRequestDTO;
 import com.trainingcenter.management.dto.TeacherResponseDTO;
 import com.trainingcenter.management.dto.TeacherCourseProgressDTO;
 import com.trainingcenter.management.dto.WeeklyScheduleItemDTO;
+import com.trainingcenter.management.entity.Institute;
+import com.trainingcenter.management.entity.InstituteTeacher;
 import com.trainingcenter.management.entity.Lecture;
 import com.trainingcenter.management.entity.SessionStatus;
 import com.trainingcenter.management.entity.Teacher;
@@ -15,6 +17,7 @@ import com.trainingcenter.management.exception.DuplicateResourceException;
 import com.trainingcenter.management.exception.ResourceNotFoundException;
 import com.trainingcenter.management.repository.AttendanceRepository;
 import com.trainingcenter.management.repository.LectureRepository;
+import com.trainingcenter.management.repository.InstituteRepository;
 import com.trainingcenter.management.repository.TeacherRepository;
 import com.trainingcenter.management.repository.TrainingSessionRepository;
 import com.trainingcenter.management.repository.UserRepository;
@@ -28,9 +31,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.stream.Collectors;
 
@@ -46,6 +49,7 @@ public class TeacherService {
     private final EnrollmentRepository enrollmentRepository;
     private final AttendanceRepository attendanceRepository;
     private final ImageService imageService;
+    private final InstituteRepository instituteRepository;
     private final InstituteTeacherRepository instituteTeacherRepository;
 
     @Transactional
@@ -107,8 +111,35 @@ public class TeacherService {
         return mapToResponse(teacherRepository.save(teacher));
     }
 
+    @Transactional
+    public TeacherResponseDTO createTeacherForInstitute(Long instituteId, TeacherRequestDTO requestDTO) {
+        TeacherResponseDTO response = createTeacher(requestDTO);
+        linkTeacherToInstitute(response.getId(), instituteId);
+        return response;
+    }
+
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private void linkTeacherToInstitute(Long teacherId, Long instituteId) {
+        Institute institute = instituteRepository.findById(instituteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Institute not found with ID: " + instituteId));
+
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + teacherId));
+
+        if (instituteTeacherRepository.existsByInstituteIdAndTeacherId(instituteId, teacherId)) {
+            throw new DuplicateResourceException("Teacher is already assigned to this institute");
+        }
+
+        InstituteTeacher instituteTeacher = InstituteTeacher.builder()
+                .institute(institute)
+                .teacher(teacher)
+                .joinedDate(LocalDate.now())
+                .build();
+
+        instituteTeacherRepository.save(instituteTeacher);
     }
 
 
