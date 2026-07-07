@@ -35,6 +35,16 @@ public class TeacherController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping("/institute/{instituteId}")
+    public ResponseEntity<TeacherResponseDTO> createTeacherForInstitute(
+            @PathVariable Long instituteId,
+            @Valid @RequestBody TeacherRequestDTO requestDTO) {
+
+        TeacherResponseDTO response = teacherService.createTeacherForInstitute(instituteId, requestDTO);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
 
     @GetMapping
     public ResponseEntity<List<TeacherResponseDTO>> getAllTeachers() {
